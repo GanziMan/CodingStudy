@@ -3,38 +3,22 @@ function sortCount(want, number) {
   for (let i = 0; i < want.length; i++) {
     hashTable[want[i]] = number[i];
   }
-
   return hashTable;
 }
 
 function solution(want, number, discount) {
-  const hashTable = sortCount(want, number);
+  let hashTable = sortCount(want, number);
 
-  for (const purch of discount) {
-    if (hashTable[purch]) hashTable[purch]--;
+  let cnt = 0;
+  for (let i = 0; i < discount.length; i++) {
+    for (let j = i; j < 10 + i; j++) {
+      if (hashTable[discount[j]]) hashTable[discount[j]]--;
+    }
+    if (Object.values(hashTable).every((value) => value === 0)) {
+      cnt++;
+    }
+    hashTable = sortCount(want, number);
   }
-  var answer = 0;
 
-  return answer;
+  return cnt;
 }
-
-solution(
-  ["banana", "apple", "rice", "pork", "pot"],
-  [3, 2, 2, 2, 1],
-  [
-    "chicken",
-    "apple",
-    "apple",
-    "banana",
-    "rice",
-    "apple",
-    "pork",
-    "banana",
-    "pork",
-    "rice",
-    "pot",
-    "banana",
-    "apple",
-    "banana",
-  ]
-); // 3
