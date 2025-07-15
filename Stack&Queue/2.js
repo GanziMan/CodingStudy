@@ -7,11 +7,10 @@ function solution(gates) {
       stack.push(gate);
     }
   }
-  console.log(stack);
   return stack.length === 0 ? true : false;
 }
 
 console.log(solution("<<>>"));
-// console.log(solution("<><>"));
-// console.log(solution(">><<"));
-// console.log(solution("<<<>"));
+console.log(solution("<><>"));
+console.log(solution(">><<"));
+console.log(solution("<<<>"));
