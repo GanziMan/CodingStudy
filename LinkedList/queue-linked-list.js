@@ -26,7 +26,7 @@ class Queue {
   }
   dequeue() {
     if (!this.first) return null;
-
+    3;
     const removedNode = this.first;
 
     if (this.first === this.last) {
