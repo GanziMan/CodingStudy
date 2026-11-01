@@ -17,26 +17,19 @@ pnpm db:setup                # 테이블 생성 + 기본 문제 시드
 pnpm dev                     # http://localhost:3000
 ```
 
-스키마가 바뀌어 기존 로컬 DB에서 에러가 나면 `data/app.db`를 지우고 `pnpm db:setup`을 다시 실행하세요.
+기존 로컬 DB에서 에러가 나면 `data/app.db`를 지우고 `pnpm db:setup`을 다시 실행하세요.
 
-## 배포 (Turso + Vercel)
+## 배포 (Vercel + Turso)
 
-1. **Turso DB 만들기** (https://turso.tech, 무료 플랜)
-   ```bash
-   brew install tursodatabase/tap/turso
-   turso auth login
-   turso db create codetest-lab --location nrt   # 도쿄 리전
-   turso db show codetest-lab --url               # → DATABASE_URL
-   turso db tokens create codetest-lab            # → DATABASE_AUTH_TOKEN
-   ```
-2. **Turso에 테이블·문제 넣기**: `.env.local`에 위 두 값을 넣고 `pnpm db:setup`
-3. **Vercel 배포** (https://vercel.com/new)
-   - GitHub 레포 Import → **Root Directory를 `codetest-lab`** 으로 지정
-   - Environment Variables: `ANTHROPIC_API_KEY`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`, `SITE_URL`
-   - Deploy
-4. **검색엔진 등록**
-   - Google Search Console: URL 접두어로 사이트 추가 → HTML 태그의 content 값을 `GOOGLE_SITE_VERIFICATION`에 넣고 재배포 → 확인 → `sitemap.xml` 제출
-   - 네이버 서치어드바이저: 사이트 등록 → HTML 태그 content 값을 `NAVER_SITE_VERIFICATION`에 넣고 재배포 → 확인 → 요청 > 사이트맵 제출
+1. Vercel에서 GitHub 레포 Import → **Root Directory를 `codetest-lab`** 으로 지정
+2. 프로젝트 **Storage → Turso** 연동 추가 (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`이 자동으로 들어감)
+3. 환경변수 `ANTHROPIC_API_KEY` 추가 후 Deploy
+   - 빌드할 때 `pnpm db:setup`이 자동으로 테이블 생성(마이그레이션)과 기본 문제 입력을 합니다.
+4. 검색엔진 등록
+   - Google Search Console: HTML 태그의 content 값을 `GOOGLE_SITE_VERIFICATION`에 넣고 재배포 → 확인 → `sitemap.xml` 제출
+   - 네이버 서치어드바이저: HTML 태그 content 값을 `NAVER_SITE_VERIFICATION`에 넣고 재배포 → 확인 → 사이트맵 제출
+
+스키마를 바꾸면 `pnpm db:generate`로 마이그레이션 파일을 만들어 함께 커밋하세요.
 
 ## 구조
 

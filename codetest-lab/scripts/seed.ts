@@ -5,10 +5,14 @@ loadEnvConfig(process.cwd());
 
 async function main() {
   const { db } = await import("../src/db");
+  const { migrate } = await import("drizzle-orm/libsql/migrator");
+  await migrate(db, { migrationsFolder: "./drizzle" });
+  console.log("migrations: ok");
   const { problems } = await import("../src/db/schema");
   const { computeOutputs } = await import("../src/lib/grader");
   const { seedProblems } = await import("./seed-data");
-  console.log(`DB: ${(process.env.DATABASE_URL || "file:./data/app.db").replace(/\?.*$/, "")}`);
+  const { dbConfig } = await import("../src/db/config");
+  console.log(`DB: ${dbConfig().url.replace(/\?.*$/, "")}`);
 
   const existing = await db.select({ title: problems.title }).from(problems);
   const titles = new Set(existing.map((p) => p.title));

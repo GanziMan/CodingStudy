@@ -2,9 +2,9 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
-// 로컬: file:./data/app.db / 배포: Turso (libsql://...) + DATABASE_AUTH_TOKEN
-const url = process.env.DATABASE_URL || "file:./data/app.db";
-const authToken = process.env.DATABASE_AUTH_TOKEN || undefined;
+import { dbConfig } from "./config";
+
+const { url, authToken } = dbConfig();
 
 const globalForDb = globalThis as unknown as {
   db?: ReturnType<typeof drizzle<typeof schema>>;
