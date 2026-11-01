@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listSubmissions } from "@/lib/problems";
 import { LevelBadge } from "@/components/LevelBadge";
-import { getSession } from "@/auth";
 import { getUserId } from "@/lib/user";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +12,12 @@ export const metadata: Metadata = {
 };
 
 export default async function HistoryPage() {
-  const session = await getSession();
   const subs = await listSubmissions(await getUserId());
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       <h1 className="text-[28px] font-semibold tracking-tight">내 풀이 기록</h1>
-      <p className="mb-8 mt-1.5 text-fg-muted">{session?.user ? "계정에 저장된 기록이라 다른 기기에서도 볼 수 있어요." : "로그인하지 않으면 기록이 이 브라우저에만 저장돼요. 로그인하면 계정으로 옮겨져 다른 기기에서도 볼 수 있어요."}</p>
+      <p className="mb-8 mt-1.5 text-fg-muted">기록은 지금 쓰는 브라우저에 저장돼요. 쿠키를 지우거나 다른 기기에서 열면 보이지 않아요.</p>
       <div className="overflow-x-auto rounded-xl border border-line">
         <table className="w-full min-w-[560px] text-sm">
           <thead className="text-left text-[13px] text-fg-subtle">
