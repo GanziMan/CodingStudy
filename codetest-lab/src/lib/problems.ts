@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { problems, submissions, type Problem } from "@/db/schema";
+import { hideOutput } from "./test-hash";
 
 export type ProblemSummary = Pick<Problem, "id" | "title" | "level" | "category" | "source"> & {
   status: "solved" | "tried" | "new";
@@ -43,7 +44,7 @@ export async function getProblem(id: number) {
   return db.query.problems.findFirst({ where: eq(problems.id, id) });
 }
 
-/** 브라우저로 보내는 필드 (참조 정답 코드 제외). 채점을 브라우저에서 하므로 테스트는 포함 */
+/** 브라우저로 보내는 필드 (참조 정답 코드 제외). 채점을 브라우저에서 하므로 테스트는 포함하되 숨은 기대값은 해시로 */
 export function toPublic(p: Problem, userId: string | null, siteOwner = false) {
   return {
     id: p.id,
@@ -54,7 +55,8 @@ export function toPublic(p: Problem, userId: string | null, siteOwner = false) {
     functionName: p.functionName,
     params: p.params,
     examples: p.examples,
-    tests: p.tests,
+    // 공개 예제는 그대로, 숨은 테스트는 기대값 대신 해시
+    tests: p.tests.map((t, i) => (i < p.examples.length ? t : hideOutput(p.id, t))),
     source: p.source,
     isMine: p.source === "ai" && (siteOwner || (!!userId && p.createdBy === userId)),
   };

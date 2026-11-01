@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { TestCase } from "@/db/schema";
+import type { PublicTest } from "@/lib/test-hash";
 import { runTests } from "@/lib/client-grader";
 import { Markdown } from "../Markdown";
 import { streamText } from "./types";
@@ -26,7 +26,7 @@ export function AiPane({
 }: {
   problemId: number;
   functionName: string;
-  tests: TestCase[];
+  tests: PublicTest[];
   code: string;
   resultSummary?: string;
   onUseCode: (code: string) => void;
@@ -102,7 +102,7 @@ export function AiPane({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       update(id, { text: data.explanation, code: data.code, verified: "채점 중" });
-      const results = await runTests(data.code, functionName, tests);
+      const results = await runTests(data.code, functionName, tests, problemId);
       update(id, { verified: `채점 결과 ${results.filter((r) => r.passed).length}/${results.length} 통과` });
     } catch (e) {
       update(id, { text: `> ${e instanceof Error ? e.message : e}` });

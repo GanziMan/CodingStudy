@@ -76,7 +76,7 @@ export function Workspace({
       setOutcome(null);
       try {
         const tests = mode === "run" ? problem.examples : problem.tests;
-        const raw = await runTests(code, problem.functionName, tests);
+        const raw = await runTests(code, problem.functionName, tests, problem.id);
         const results = raw.map((r) =>
           r.index >= exampleCount ? { ...r, hidden: true } : r,
         );

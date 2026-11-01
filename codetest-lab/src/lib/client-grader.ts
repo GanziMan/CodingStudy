@@ -1,6 +1,6 @@
 "use client";
 
-import type { TestCase } from "@/db/schema";
+import type { PublicTest } from "./test-hash";
 
 export type TestResult = {
   index: number;
@@ -29,6 +29,12 @@ const fmt = (v) => {
   } catch { return String(v); }
 };
 const show = (v) => (typeof v === "string" ? v : fmt(v));
+// 서버 test-hash.ts의 canonical과 같아야 한다
+const canonical = (v) => JSON.stringify(v, (_, x) => (typeof x === "bigint" ? String(x) : x)) ?? "undefined";
+const sha256 = async (s) => {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+};
 const eq = (a, b) => {
   if (typeof a === "number" && typeof b === "number") {
     if (Number.isNaN(a) && Number.isNaN(b)) return true;
@@ -42,8 +48,8 @@ const eq = (a, b) => {
   const ka = Object.keys(a), kb = Object.keys(b);
   return ka.length === kb.length && ka.every((k) => eq(a[k], b[k]));
 };
-self.onmessage = (e) => {
-  const { code, functionName, input, output } = e.data;
+self.onmessage = async (e) => {
+  const { code, functionName, input, output, hash, problemId } = e.data;
   const logs = [];
   const push = (...args) => { if (logs.length < 50) logs.push(args.map(show).join(" ")); };
   self.console = { log: push, info: push, warn: push, error: push, debug: push };
@@ -54,7 +60,10 @@ self.onmessage = (e) => {
     const actual = fn(...input);
     const timeMs = performance.now() - start;
     if (actual && typeof actual.then === "function") throw new Error("async 함수가 아닌 일반 함수로 값을 return 해주세요.");
-    self.postMessage({ passed: eq(actual, output), actual: fmt(actual), error: null, logs, timeMs });
+    const passed = hash
+      ? (await sha256("ctl:" + problemId + ":" + canonical(actual))) === hash
+      : eq(actual, output);
+    self.postMessage({ passed, actual: fmt(actual), error: null, logs, timeMs });
   } catch (err) {
     let msg = err && err.message ? err.message : String(err);
     if (/call stack/i.test(msg)) msg = "스택 오버플로: 재귀가 너무 깊어요. 반복문(Bottom-up)으로 바꿔보세요.";
@@ -72,8 +81,8 @@ function getWorkerUrl() {
 
 const fmt = (v: unknown) => (typeof v === "string" ? JSON.stringify(v) : JSON.stringify(v));
 
-function runOne(code: string, functionName: string, t: TestCase, index: number): Promise<TestResult> {
-  const base = { index, input: t.input.map(fmt).join(", "), expected: fmt(t.output) };
+function runOne(code: string, functionName: string, t: PublicTest, index: number, problemId: number): Promise<TestResult> {
+  const base = { index, input: t.input.map(fmt).join(", "), expected: t.hash ? "(숨김)" : fmt(t.output) };
   return new Promise((resolve) => {
     const worker = new Worker(getWorkerUrl());
     const timer = setTimeout(() => {
@@ -98,12 +107,12 @@ function runOne(code: string, functionName: string, t: TestCase, index: number):
       e.preventDefault();
       resolve({ ...base, passed: false, actual: null, error: `문법 오류: ${e.message}`, logs: [], timeMs: 0 });
     };
-    worker.postMessage({ code, functionName, input: t.input, output: t.output });
+    worker.postMessage({ code, functionName, input: t.input, output: t.output, hash: t.hash, problemId });
   });
 }
 
-export async function runTests(code: string, functionName: string, tests: TestCase[]) {
+export async function runTests(code: string, functionName: string, tests: PublicTest[], problemId: number) {
   const results: TestResult[] = [];
-  for (let i = 0; i < tests.length; i++) results.push(await runOne(code, functionName, tests[i], i));
+  for (let i = 0; i < tests.length; i++) results.push(await runOne(code, functionName, tests[i], i, problemId));
   return results;
 }
