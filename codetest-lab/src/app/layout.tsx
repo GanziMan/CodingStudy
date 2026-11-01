@@ -2,6 +2,7 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { AuthButton } from "@/components/AuthButton";
 import { Logo } from "@/components/Logo";
 import { SiteNav } from "@/components/SiteNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -72,8 +73,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Logo />
             </Link>
             <SiteNav />
-            <div className="ml-auto shrink-0">
+            <div className="ml-auto flex shrink-0 items-center gap-3">
               <ThemeToggle />
+              <AuthButton />
             </div>
           </div>
         </header>
@@ -92,6 +94,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </Link>
               <Link href="/guide" className="hover:text-fg">
                 이용 가이드
+              </Link>
+              <Link href="/privacy" className="hover:text-fg">
+                개인정보처리방침
               </Link>
               <a href="https://github.com/GanziMan/codingstudy" className="hover:text-fg">
                 GitHub

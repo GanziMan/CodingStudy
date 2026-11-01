@@ -29,6 +29,16 @@ pnpm dev                     # http://localhost:3000
    - Google Search Console: HTML 태그의 content 값을 `GOOGLE_SITE_VERIFICATION`에 넣고 재배포 → 확인 → `sitemap.xml` 제출
    - 네이버 서치어드바이저: HTML 태그 content 값을 `NAVER_SITE_VERIFICATION`에 넣고 재배포 → 확인 → 사이트맵 제출
 
+## 로그인 (카카오·구글)
+
+키를 넣기 전에는 로그인 버튼이 숨겨지고 익명 쿠키로만 동작합니다. Vercel 환경변수에 아래를 넣고 재배포하면 켜집니다.
+
+- `AUTH_SECRET`: `openssl rand -base64 32`
+- `AUTH_KAKAO_ID`(REST API 키), `AUTH_KAKAO_SECRET`(Client Secret) — Redirect URI `https://<도메인>/api/auth/callback/kakao`
+- `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` — Redirect URI `https://<도메인>/api/auth/callback/google`
+
+로그인하면 그 브라우저에서 익명으로 남긴 기록과 만든 문제가 계정으로 옮겨집니다.
+
 스키마를 바꾸면 `pnpm db:generate`로 마이그레이션 파일을 만들어 함께 커밋하세요.
 
 ## 구조

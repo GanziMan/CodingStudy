@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const UID_COOKIE = "ctl_uid";
+import { UID_COOKIE } from "./lib/uid";
 
 // 로그인 없이 쓰도록 익명 ID 쿠키를 발급 (풀이 기록 구분용)
 export function proxy(request: NextRequest) {
@@ -21,5 +21,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|og.png|robots.txt|sitemap.xml).*)"],
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|icon|og.png|robots.txt|sitemap.xml).*)"],
 };
