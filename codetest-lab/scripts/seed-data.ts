@@ -11,6 +11,8 @@ export type SeedProblem = {
 
 const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
 
+import { moreProblems } from "./seed-data-more";
+
 export const seedProblems: SeedProblem[] = [
   {
     title: "최댓값과 최솟값의 차이",
@@ -29,7 +31,7 @@ export const seedProblems: SeedProblem[] = [
     hiddenInputs: [
       [[-3, -7, -1]],
       [[1000000, -1000000]],
-      [range(100000).map((i) => (i * 7919) % 200001 - 100000)],
+      [range(5000).map((i) => (i * 7919) % 200001 - 100000)],
     ],
     reference: `function solution(numbers) {
   let max = -Infinity, min = Infinity;
@@ -107,7 +109,7 @@ n = 4일 때: (1+1+1+1), (1+3), (3+1) → 3가지`,
       [[5]],
       [[7, 2]],
       [[1, 100, 1, 1, 1, 100, 1, 1, 100, 1]],
-      [range(100000).map((i) => ((i * 37) % 1000) + 1)],
+      [range(5000).map((i) => ((i * 37) % 1000) + 1)],
     ],
     reference: `function solution(cost) {
   const n = cost.length;
@@ -139,7 +141,7 @@ n = 4일 때: (1+1+1+1), (1+3), (3+1) → 3가지`,
       [3, []],
       [10, [5, 8]],
       [20, [3, 6, 9, 12, 15, 18]],
-      [100000, range(3000).map((i) => i * 31 + 3).filter((x) => x < 100000)],
+      [100000, range(1500).map((i) => i * 61 + 3).filter((x) => x < 100000)],
     ],
     reference: `function solution(n, broken) {
   const MOD = 1_000_000_007;
@@ -190,4 +192,5 @@ n = 4일 때: (1+1+1+1), (1+3), (3+1) → 3가지`,
   return dp[n][m];
 }`,
   },
+  ...moreProblems,
 ];

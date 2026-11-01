@@ -13,7 +13,7 @@ AI 튜터가 붙은 무료 자바스크립트 코딩테스트 연습 사이트. 
 ```bash
 pnpm install
 cp .env.example .env.local   # ANTHROPIC_API_KEY 입력
-pnpm db:setup                # 테이블 생성 + 기본 문제 시드
+pnpm db:setup                # 테이블 생성 + 기본 문제 27개 시드
 pnpm dev                     # http://localhost:3000
 ```
 
