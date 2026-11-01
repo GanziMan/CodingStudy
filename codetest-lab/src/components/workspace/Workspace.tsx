@@ -131,36 +131,45 @@ export function Workspace({
       onClick={() => setTab(t)}
       aria-selected={tab === t}
       role="tab"
-      className={`h-11 shrink-0 border-b-2 px-4 text-sm ${tab === t ? "border-accent text-white" : "border-transparent text-white/55 hover:text-white"}`}
+      className={`relative h-11 shrink-0 px-3 text-sm transition-colors ${
+        tab === t
+          ? "text-fg after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-fg"
+          : "text-fg-subtle hover:text-fg"
+      }`}
     >
       {label}
     </button>
   );
 
   return (
-    <div className="flex flex-col bg-panel-2 text-white lg:h-[calc(100dvh-3.5rem)]">
-      <div className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-panel-line bg-navy/60 px-4 py-2">
-        <Link href="/problems" className="text-xs text-white/50 hover:text-white">
-          ← 문제 목록
+    <div className="flex flex-col lg:h-[calc(100dvh-3.5rem)]">
+      <div className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-2 sm:px-5">
+        <Link href="/problems" className="text-[13px] text-fg-subtle hover:text-fg">
+          문제 목록
         </Link>
-        <h1 className="truncate font-semibold">{problem.title}</h1>
+        <span className="text-fg-faint" aria-hidden>
+          /
+        </span>
+        <h1 className="truncate text-[15px] font-semibold">{problem.title}</h1>
         <LevelBadge level={problem.level} />
-        <span className="text-xs text-white/50">{problem.category}</span>
-        {problem.source === "ai" && <span className="text-xs text-[#b794f6]">AI 생성 문제</span>}
-        {solved && <span className="text-xs font-semibold text-ok">✓ 해결</span>}
+        <span className="text-[13px] text-fg-subtle">{problem.category}</span>
+        {problem.source === "ai" && (
+          <span className="rounded border border-line px-1 text-[11px] text-fg-subtle">AI 생성</span>
+        )}
+        {solved && <span className="text-[13px] text-ok">해결함</span>}
         {problem.isMine && (
-          <button onClick={deleteProblem} className="ml-auto text-xs text-white/40 hover:text-bad">
+          <button onClick={deleteProblem} className="ml-auto text-[13px] text-fg-subtle hover:text-bad">
             문제 삭제
           </button>
         )}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <section className="flex min-h-0 flex-col border-panel-line lg:w-[44%] lg:border-r">
-          <div role="tablist" className="flex shrink-0 overflow-x-auto border-b border-panel-line px-2">
+        <section className="flex min-h-0 flex-col border-line lg:w-[44%] lg:border-r">
+          <div role="tablist" className="flex shrink-0 overflow-x-auto border-b border-line px-2">
             {tabBtn("problem", "문제 설명")}
             {tabBtn("ai", "AI 튜터")}
-            {tabBtn("history", `내 제출 ${subs.length ? `(${subs.length})` : ""}`)}
+            {tabBtn("history", subs.length ? `내 제출 ${subs.length}` : "내 제출")}
           </div>
           <div className="max-h-[60vh] min-h-0 flex-1 overflow-y-auto lg:max-h-none">
             <div hidden={tab !== "problem"}>
@@ -175,7 +184,7 @@ export function Workspace({
                 solved={solved}
                 resultSummary={resultSummary}
                 onUseCode={(c) => {
-                  if (confirm("에디터의 코드를 AI 풀이로 바꿀까요? (지금 코드는 사라집니다)")) setCode(c);
+                  if (confirm("에디터의 코드를 AI 풀이로 바꿀까요? 지금 코드는 사라져요.")) setCode(c);
                 }}
               />
             </div>
@@ -190,15 +199,14 @@ export function Workspace({
           </div>
         </section>
 
-        <section className="flex flex-1 flex-col border-t border-panel-line lg:min-h-0 lg:border-t-0">
+        <section className="flex flex-1 flex-col border-t border-line lg:min-h-0 lg:border-t-0">
           {showTip && (
-            <div className="flex items-start gap-3 border-b border-panel-line bg-accent/10 px-4 py-3 text-[13px] leading-relaxed text-white/85">
-              <span aria-hidden>👋</span>
+            <div className="flex items-start gap-3 border-b border-line bg-accent-soft px-4 py-3 text-[13px] leading-relaxed text-fg">
               <p className="flex-1">
-                <b>처음이세요?</b> <code className="text-accent">{problem.functionName}</code> 함수 안에 코드를 쓰고
-                답을 <b>return</b> 하면 돼요. <b>코드 실행</b>은 예제로만 확인하고, <b>제출 후 채점하기</b>는 숨은
-                테스트까지 채점해요. 막히면 <b>AI 튜터</b> 탭에서 힌트를 받아보세요.{" "}
-                <Link href="/guide" className="text-accent underline">
+                <code className="font-mono text-accent">{problem.functionName}</code> 함수 안에 코드를 쓰고 답을{" "}
+                <b className="font-semibold">return</b> 하면 돼요. 코드 실행은 예제로만 확인하고, 제출 후 채점하기는 숨은
+                테스트까지 채점해요. 막히면 AI 튜터 탭에서 힌트를 받아보세요.{" "}
+                <Link href="/guide" className="underline underline-offset-4">
                   이용 가이드
                 </Link>
               </p>
@@ -208,42 +216,48 @@ export function Workspace({
                   setShowTip(false);
                   safeSet(TIP_KEY, "1");
                 }}
-                className="text-white/50 hover:text-white"
+                className="text-fg-subtle hover:text-fg"
               >
-                ✕
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
+                  <path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
               </button>
             </div>
           )}
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-panel-line px-4 text-xs text-white/60">
-            <span>solution.js · JavaScript</span>
+          <div className="flex h-10 shrink-0 items-center justify-between border-b border-line px-4 text-[13px] text-fg-subtle">
+            <span className="font-mono text-[12px]">solution.js</span>
             <button
               onClick={() => confirm("코드를 처음 상태로 되돌릴까요?") && setCode(starter)}
-              className="hover:text-white"
+              className="hover:text-fg"
             >
-              초기화
+              처음 코드로 되돌리기
             </button>
           </div>
           <div className="h-[360px] lg:h-auto lg:min-h-0 lg:flex-[3]">
             <CodeEditor value={code} onChange={setCode} onRun={() => grade("run")} />
           </div>
-          <div className="min-h-[160px] overflow-y-auto border-t border-panel-line bg-[#152230] lg:min-h-0 lg:flex-[2]">
+          <div className="min-h-[160px] overflow-y-auto border-t border-line bg-bg-subtle lg:min-h-0 lg:flex-[2]">
+            <div className="flex h-9 items-center border-b border-line px-4 text-[13px] font-medium">실행 결과</div>
             <ResultPanel busy={busy} outcome={outcome} />
           </div>
-          <div className="sticky bottom-0 flex h-14 shrink-0 items-center justify-end gap-2 border-t border-panel-line bg-[#101c27] px-4">
-            <span className="mr-auto hidden text-xs text-white/40 sm:inline">⌘/Ctrl + Enter 로 실행</span>
+          <div className="sticky bottom-0 flex h-14 shrink-0 items-center justify-end gap-2 border-t border-line bg-surface px-4">
+            <span className="mr-auto hidden text-[12px] text-fg-subtle sm:inline">
+              <kbd className="rounded border border-line px-1 font-mono">⌘/Ctrl</kbd> +{" "}
+              <kbd className="rounded border border-line px-1 font-mono">Enter</kbd> 로 실행
+            </span>
             <button
               disabled={!!busy}
               onClick={() => grade("run")}
-              className="h-9 rounded-md bg-white/10 px-4 text-sm font-semibold hover:bg-white/20 disabled:opacity-50"
+              className="h-9 rounded-md border border-line-strong px-4 text-sm font-medium hover:bg-surface-hover disabled:opacity-50"
             >
-              {busy === "run" ? "실행 중…" : "코드 실행"}
+              {busy === "run" ? "실행 중" : "코드 실행"}
             </button>
             <button
               disabled={!!busy}
               onClick={() => grade("submit")}
-              className="h-9 rounded-md bg-accent px-4 text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+              className="h-9 rounded-md bg-fg px-4 text-sm font-medium text-bg hover:opacity-85 disabled:opacity-50"
             >
-              {busy === "submit" ? "채점 중…" : "제출 후 채점하기"}
+              {busy === "submit" ? "채점 중" : "제출 후 채점하기"}
             </button>
           </div>
         </section>

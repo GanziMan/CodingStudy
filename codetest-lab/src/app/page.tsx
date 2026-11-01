@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HeroPreview } from "@/components/HeroPreview";
 import { JsonLd } from "@/components/JsonLd";
 import { LevelBadge } from "@/components/LevelBadge";
 import { listProblems } from "@/lib/problems";
@@ -13,19 +14,22 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const STEPS = [
-  { n: 1, title: "문제 고르기", body: "Lv.1부터 차근차근. 레벨과 유형(DP, 구현 등)으로 골라보세요." },
-  { n: 2, title: "코드 작성하고 실행", body: "브라우저에서 바로 실행돼요. 설치도, 회원가입도 필요 없어요." },
-  { n: 3, title: "막히면 AI 튜터", body: "정답을 바로 주지 않고 힌트를 1→3단계로 조금씩 알려줘요." },
-];
-
-const FEATURES = [
-  { icon: "⚡", title: "바로 실행·채점", body: "예제 실행과 숨은 테스트 채점까지 실제 코딩테스트와 같은 방식이에요." },
-  { icon: "💡", title: "단계별 힌트", body: "방향 → 점화식 → 구현 순서로, 스스로 풀 수 있을 만큼만 알려줘요." },
-  { icon: "🔍", title: "내 코드 리뷰", body: "틀린 코드를 보여주면 무엇이 왜 틀렸고 어떻게 고치면 되는지 짚어줘요." },
-  { icon: "📖", title: "쉬운 해설", body: "작은 예시로 값이 채워지는 과정을 따라가며 풀이를 설명해요." },
-  { icon: "🤖", title: "AI 문제 만들기", body: "원하는 유형과 레벨로 새 문제를 만들어 무한히 연습할 수 있어요." },
-  { icon: "📝", title: "풀이 기록", body: "제출한 코드와 결과가 남아서 다시 보고 복습하기 좋아요." },
+const HINTS = [
+  {
+    level: "1단계",
+    title: "방향만",
+    body: "이 문제는 DP예요. dp[i]를 'i번째 칸까지 가는 방법의 수'로 정의해 보세요.",
+  },
+  {
+    level: "2단계",
+    title: "점화식의 모양",
+    body: "i번째 칸에는 i-1칸 또는 i-2칸에서 올 수 있어요. 그러면 dp[i]는 앞의 두 값으로 표현돼요.",
+  },
+  {
+    level: "3단계",
+    title: "구현 직전까지",
+    body: "dp[1]=1, dp[2]=2로 시작해서 i=3부터 n까지 채우고, 매번 1,000,000,007로 나눈 나머지를 저장하세요.",
+  },
 ];
 
 const FAQ = [
@@ -49,7 +53,9 @@ const FAQ = [
 
 export default async function Home() {
   const problems = await listProblems(await getUserId());
-  const starters = problems.filter((p) => p.source === "seed").slice(0, 4);
+  const starters = problems.filter((p) => p.source === "seed").slice(0, 6);
+  const first = starters[0];
+  const stairs = problems.find((p) => p.title === "계단 오르기");
 
   return (
     <main>
@@ -76,98 +82,117 @@ export default async function Home() {
         }}
       />
 
-      <section className="bg-navy text-white">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <p className="text-sm font-semibold text-accent">무료 · 회원가입 없음 · 설치 없음</p>
-          <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-5xl">
-            AI 튜터와 함께하는
-            <br />
-            자바스크립트 코딩테스트 연습
-          </h1>
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/70 sm:text-lg">
-            브라우저에서 바로 코드를 실행하고 채점받으세요. 막히면 AI가 정답 대신 힌트를 조금씩 알려주고, 틀린
-            코드는 어디가 틀렸는지 짚어줍니다. 코딩테스트가 처음이어도 괜찮아요.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href={starters[0] ? `/problems/${starters[0].id}` : "/problems"}
-              className="rounded-md bg-accent px-5 py-3 font-semibold hover:opacity-90"
-            >
-              첫 문제 풀어보기
-            </Link>
-            <Link href="/guide" className="rounded-md bg-white/10 px-5 py-3 font-semibold hover:bg-white/20">
-              처음이라면 이용 가이드
-            </Link>
+      <section className="border-b border-line bg-bg-subtle">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_1.1fr] lg:py-24">
+          <div>
+            <h1 className="text-[34px] font-semibold leading-[1.2] tracking-[-0.03em] sm:text-[46px]">
+              자바스크립트 코딩테스트,
+              <br />
+              막히면 힌트부터
+            </h1>
+            <p className="mt-5 max-w-[34em] text-[17px] leading-relaxed text-fg-muted">
+              브라우저에서 바로 코드를 실행하고 채점받으세요. 막히는 순간 정답 대신 다음 한 걸음만 알려주고, 틀린
+              코드는 어디가 왜 틀렸는지 짚어줍니다. 설치도, 회원가입도 필요 없어요.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href={first ? `/problems/${first.id}` : "/problems"}
+                className="inline-flex h-10 items-center rounded-md bg-fg px-4 text-sm font-medium text-bg transition-opacity hover:opacity-85"
+              >
+                첫 문제 풀어보기
+              </Link>
+              <Link
+                href="/guide"
+                className="inline-flex h-10 items-center rounded-md border border-line-strong bg-surface px-4 text-sm font-medium hover:bg-surface-hover"
+              >
+                처음이라면 이용 가이드
+              </Link>
+            </div>
           </div>
+          <HeroPreview />
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <h2 className="text-xl font-bold">이렇게 시작해요</h2>
-        <ol className="mt-6 grid gap-4 sm:grid-cols-3">
-          {STEPS.map((s) => (
-            <li key={s.n} className="rounded-xl border border-line bg-surface p-5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 font-bold text-accent">
-                {s.n}
-              </span>
-              <h3 className="mt-3 font-semibold">{s.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-muted">{s.body}</p>
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <div className="max-w-2xl">
+          <h2 className="text-2xl font-semibold tracking-tight">힌트는 세 단계로 나눠서 받아요</h2>
+          <p className="mt-3 leading-relaxed text-fg-muted">
+            필요한 만큼만 열어보세요. 대부분은 1단계나 2단계에서 스스로 풀 수 있어요. 아래는{" "}
+            {stairs ? (
+              <Link href={`/problems/${stairs.id}`} className="text-fg underline underline-offset-4">
+                계단 오르기
+              </Link>
+            ) : (
+              "계단 오르기"
+            )}{" "}
+            문제의 실제 힌트 예시예요.
+          </p>
+        </div>
+        <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-3">
+          {HINTS.map((h) => (
+            <li key={h.level} className="bg-surface p-6">
+              <p className="font-mono text-xs text-fg-subtle">{h.level}</p>
+              <h3 className="mt-2 font-semibold">{h.title}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-fg-muted">{h.body}</p>
             </li>
           ))}
         </ol>
+        <p className="mt-4 text-sm text-fg-subtle">
+          그래도 어렵다면 내 코드 리뷰, 해설, AI 풀이 순서로 도움을 더 받을 수 있어요.
+        </p>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-14">
-        <div className="flex items-end justify-between">
-          <h2 className="text-xl font-bold">추천 시작 문제</h2>
-          <Link href="/problems" className="text-sm text-accent hover:underline">
-            전체 문제 보기 →
-          </Link>
-        </div>
-        <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-          {starters.map((p) => (
-            <li key={p.id}>
-              <Link
-                href={`/problems/${p.id}`}
-                className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4 hover:border-accent"
-              >
-                <LevelBadge level={p.level} />
-                <span className="font-medium">{p.title}</span>
-                <span className="ml-auto text-sm text-muted">{p.category}</span>
-                {p.status === "solved" && <span className="text-sm font-semibold text-ok">해결</span>}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-14">
-          <h2 className="text-xl font-bold">코테랩에서 할 수 있는 것</h2>
-          <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <li key={f.title}>
-                <span aria-hidden className="text-2xl">{f.icon}</span>
-                <h3 className="mt-2 font-semibold">{f.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted">{f.body}</p>
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">여기서 시작해 보세요</h2>
+              <p className="mt-2 text-fg-muted">쉬운 문제부터 DP 기본기까지 차근차근 이어지는 순서예요.</p>
+            </div>
+            <Link href="/problems" className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">
+              전체 문제 보기
+            </Link>
+          </div>
+          <ul className="mt-8 divide-y divide-line rounded-xl border border-line">
+            {starters.map((p) => (
+              <li key={p.id}>
+                <Link
+                  href={`/problems/${p.id}`}
+                  className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-surface-hover"
+                >
+                  <LevelBadge level={p.level} />
+                  <span className="font-medium">{p.title}</span>
+                  <span className="ml-auto text-sm text-fg-subtle">{p.category}</span>
+                  {p.status === "solved" && <span className="text-sm text-ok">해결</span>}
+                </Link>
               </li>
             ))}
           </ul>
         </div>
       </section>
 
-      <section className="mx-auto max-w-3xl px-4 py-14">
-        <h2 className="text-xl font-bold">자주 묻는 질문</h2>
-        <div className="mt-6 divide-y divide-line rounded-xl border border-line bg-surface">
-          {FAQ.map((f) => (
-            <details key={f.q} className="group p-5">
-              <summary className="cursor-pointer list-none font-semibold">
-                <span className="mr-2 text-accent">Q.</span>
-                {f.q}
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-muted">{f.a}</p>
-            </details>
-          ))}
+      <section className="border-t border-line bg-bg-subtle">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_2fr]">
+          <h2 className="text-2xl font-semibold tracking-tight">자주 묻는 질문</h2>
+          <div className="divide-y divide-line border-y border-line">
+            {FAQ.map((f) => (
+              <details key={f.q} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
+                  {f.q}
+                  <svg
+                    viewBox="0 0 16 16"
+                    width="14"
+                    height="14"
+                    className="shrink-0 text-fg-subtle transition-transform group-open:rotate-45"
+                    aria-hidden
+                  >
+                    <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </summary>
+                <p className="mt-3 max-w-[60ch] leading-relaxed text-fg-muted">{f.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
     </main>

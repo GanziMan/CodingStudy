@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { OG_BASE } from "@/lib/site";
 import Link from "next/link";
 import { ProblemTable } from "@/components/ProblemTable";
 import { listProblems } from "@/lib/problems";
+import { OG_BASE } from "@/lib/site";
 import { getUserId } from "@/lib/user";
 
 export const dynamic = "force-dynamic";
@@ -20,19 +20,20 @@ export default async function ProblemsPage() {
   const solved = problems.filter((p) => p.status === "solved").length;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">코딩테스트 연습 문제</h1>
-          <p className="mt-1 text-sm text-muted">
-            {problems.length}문제 중 <b className="text-ok">{solved}</b>문제 해결 · 처음이라면 Lv.1부터 시작해 보세요
+          <h1 className="text-[28px] font-semibold tracking-tight">코딩테스트 연습 문제</h1>
+          <p className="mt-1.5 text-fg-muted">
+            {problems.length}문제 중 <span className="text-fg">{solved}문제</span>를 풀었어요. 처음이라면 Lv.1부터
+            시작해 보세요.
           </p>
         </div>
         <Link
           href="/generate"
-          className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          className="inline-flex h-9 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium hover:bg-surface-hover"
         >
-          + AI로 새 문제 만들기
+          AI로 새 문제 만들기
         </Link>
       </div>
       <ProblemTable problems={problems} />

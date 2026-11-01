@@ -13,15 +13,15 @@ export const metadata: Metadata = {
 };
 
 const Code = ({ children }: { children: string }) => (
-  <pre className="mt-3 overflow-x-auto rounded-lg bg-[#0f1a24] p-4 font-mono text-[13px] leading-relaxed text-[#e6edf3]">
+  <pre className="mt-3 overflow-x-auto rounded-lg bg-code border border-line p-4 font-mono text-[13px] leading-relaxed text-fg">
     {children}
   </pre>
 );
 
 const Section = ({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
   <section id={id} className="scroll-mt-20 border-t border-line pt-10">
-    <h2 className="text-xl font-bold">{title}</h2>
-    <div className="mt-4 space-y-3 leading-relaxed text-ink/85">{children}</div>
+    <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+    <div className="mt-4 space-y-3 leading-relaxed text-fg-muted">{children}</div>
   </section>
 );
 
@@ -54,17 +54,16 @@ export default function GuidePage() {
         }}
       />
 
-      <p className="text-sm font-semibold text-accent">이용 가이드</p>
-      <h1 className="mt-2 text-3xl font-bold leading-tight">코딩테스트가 처음이라면 여기부터</h1>
-      <p className="mt-4 leading-relaxed text-muted">
+            <h1 className="text-[32px] font-semibold leading-tight tracking-tight">코딩테스트가 처음이라면 여기부터</h1>
+      <p className="mt-4 leading-relaxed text-fg-subtle">
         코테랩은 많은 기업 코딩테스트와 같은 방식으로 문제를 풀어요. 5분만 읽으면 바로 시작할 수 있어요.
       </p>
 
-      <nav aria-label="목차" className="mt-8 rounded-xl border border-line bg-surface p-5">
+      <nav aria-label="목차" className="mt-8 rounded-xl border border-line p-5">
         <ol className="space-y-1.5 text-sm">
           {TOC.map(([id, label]) => (
             <li key={id}>
-              <a href={`#${id}`} className="text-ink/80 hover:text-accent">
+              <a href={`#${id}`} className="text-fg-muted hover:text-accent">
                 {label}
               </a>
             </li>
@@ -98,7 +97,7 @@ export default function GuidePage() {
           <div className="overflow-x-auto">
             <table className="mt-2 w-full border-collapse font-mono text-sm">
               <thead>
-                <tr className="bg-bg text-left">
+                <tr className="bg-bg-subtle text-left">
                   <th className="border border-line px-3 py-2">numbers</th>
                   <th className="border border-line px-3 py-2">result</th>
                 </tr>
@@ -132,7 +131,7 @@ export default function GuidePage() {
         <Section id="results" title="4. 결과 메시지 읽는 법">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <b className="text-ok">통과</b> / <b className="text-bad">실패</b>: 실패하면 기댓값과 내 실행 결과를
+              <b className="font-semibold text-ok">통과</b> / <b className="font-semibold text-bad">실패</b>: 실패하면 기댓값과 내 실행 결과를
               비교해 보세요.
             </li>
             <li>
@@ -162,7 +161,7 @@ export default function GuidePage() {
               그래도 어렵다면 <b>해설</b>을 읽고, 해설을 덮은 채 다시 풀어보기
             </li>
           </ol>
-          <p className="text-sm text-muted">AI 튜터는 공정한 이용을 위해 하루 사용 횟수에 제한이 있어요.</p>
+          <p className="text-sm text-fg-subtle">AI 튜터는 공정한 이용을 위해 하루 사용 횟수에 제한이 있어요.</p>
         </Section>
 
         <Section id="mistakes" title="6. 초보자가 자주 하는 실수">
@@ -183,9 +182,9 @@ export default function GuidePage() {
         </Section>
       </div>
 
-      <div className="mt-14 rounded-xl bg-navy p-6 text-white">
-        <p className="text-lg font-bold">준비 끝! 첫 문제를 풀어볼까요?</p>
-        <Link href="/problems" className="mt-4 inline-block rounded-md bg-accent px-5 py-2.5 font-semibold">
+      <div className="mt-14 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-bg-subtle p-6">
+        <p className="font-semibold">이제 첫 문제를 풀어볼 차례예요.</p>
+        <Link href="/problems" className="inline-flex h-10 items-center rounded-md bg-fg px-4 text-sm font-medium text-bg hover:opacity-85">
           문제 목록 보기
         </Link>
       </div>

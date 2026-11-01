@@ -1,11 +1,16 @@
-const COLORS = ["", "#2ec27e", "#2b9af3", "#f0a020", "#e5484d", "#9b5cf6"];
+// 레벨은 색 하나로만 구분하지 않고 숫자를 함께 표시한다
+const TONE: Record<number, string> = {
+  1: "text-ok bg-ok-soft",
+  2: "text-accent bg-accent-soft",
+  3: "text-warn bg-warn-soft",
+  4: "text-bad bg-bad-soft",
+  5: "text-fg bg-surface-hover",
+};
 
 export function LevelBadge({ level }: { level: number }) {
-  const c = COLORS[level] ?? "#6b7a89";
   return (
     <span
-      className="inline-flex h-6 items-center rounded px-2 text-xs font-semibold"
-      style={{ color: c, background: `${c}1f` }}
+      className={`inline-flex h-[22px] items-center rounded-md px-1.5 font-mono text-[12px] font-medium ${TONE[level] ?? TONE[5]}`}
     >
       Lv.{level}
     </span>

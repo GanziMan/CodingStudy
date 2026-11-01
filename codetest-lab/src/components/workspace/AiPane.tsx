@@ -84,61 +84,66 @@ export function AiPane({
   };
 
   const btn =
-    "rounded-md border border-panel-line bg-white/5 px-3 py-2 text-sm hover:border-accent hover:bg-accent/10 disabled:opacity-40";
+    "flex h-9 items-center justify-center rounded-md border border-line bg-surface px-3 text-[13px] font-medium transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
     <div className="flex flex-col">
-      <div className="sticky top-0 z-10 grid grid-cols-2 gap-2 border-b border-panel-line bg-panel-2 p-4">
-        <button disabled={busy} onClick={hint} className={btn}>
-          💡 힌트 {hintLevel}단계
-        </button>
-        <button
-          disabled={busy}
-          onClick={() => runStream("내 코드 리뷰", "/api/ai/review", { code, resultSummary })}
-          className={btn}
-        >
-          🔍 내 코드 리뷰
-        </button>
-        <button
-          disabled={busy}
-          onClick={() => spoilerOk("해설") && runStream("해설", "/api/ai/explain", {})}
-          className={btn}
-        >
-          📖 해설 보기
-        </button>
-        <button disabled={busy} onClick={solve} className={btn}>
-          🤖 AI가 풀어보기
-        </button>
+      <div className="sticky top-0 z-10 border-b border-line bg-surface px-5 py-4">
+        <div className="grid grid-cols-2 gap-2">
+          <button disabled={busy} onClick={hint} className={`${btn} border-line-strong`}>
+            힌트 {hintLevel}단계 받기
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => runStream("내 코드 리뷰", "/api/ai/review", { code, resultSummary })}
+            className={btn}
+          >
+            내 코드 리뷰
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => spoilerOk("해설") && runStream("해설", "/api/ai/explain", {})}
+            className={btn}
+          >
+            해설 보기
+          </button>
+          <button disabled={busy} onClick={solve} className={btn}>
+            AI 풀이 보기
+          </button>
+        </div>
+        <p className="mt-2.5 text-[12px] text-fg-subtle">해설과 AI 풀이에는 정답 코드가 들어 있어요.</p>
       </div>
 
-      <div className="space-y-4 p-4">
+      <div className="space-y-4 px-5 py-5">
         {entries.length === 0 && (
-          <p className="px-2 py-6 text-sm leading-relaxed text-white/50">
-            막히면 <b>힌트</b>부터 받아보세요. 1단계는 방향만, 3단계로 갈수록 구체적이에요.
-            <br />
-            코드를 짰는데 틀렸다면 <b>내 코드 리뷰</b>가 무엇이 왜 틀렸는지 짚어줘요.
-            <br />
-            <b>해설</b>과 <b>AI 풀이</b>에는 정답 코드가 들어 있으니 충분히 고민한 뒤에 열어보세요.
-          </p>
+          <div className="space-y-2 text-sm leading-relaxed text-fg-muted">
+            <p>막히면 힌트부터 받아보세요. 1단계는 방향만, 3단계로 갈수록 구체적이에요.</p>
+            <p>코드를 썼는데 틀렸다면 내 코드 리뷰가 무엇이 왜 틀렸는지 짚어줘요.</p>
+          </div>
         )}
         {entries.map((e) => (
-          <article key={e.id} className="rounded-lg border border-panel-line bg-panel p-4">
-            <header className="mb-2 flex items-center gap-2 text-xs font-semibold text-accent">
-              {e.title}
-              {e.pending && <span className="animate-pulse text-white/40">생각 중…</span>}
-              {e.verified && <span className="text-ok">{e.verified}</span>}
+          <article key={e.id} className="rounded-lg border border-line bg-surface">
+            <header className="flex items-center gap-2 border-b border-line px-4 py-2.5 text-[13px]">
+              <span className="font-medium">{e.title}</span>
+              {e.pending && <span className="text-fg-subtle">답변을 쓰는 중</span>}
+              {e.verified && <span className="ml-auto text-ok">{e.verified}</span>}
             </header>
-            {e.text && <Markdown dark>{e.text}</Markdown>}
-            {e.code && (
-              <>
-                <pre className="mt-3 overflow-x-auto rounded-md bg-[#0f1a24] p-3 font-mono text-[13px] text-[#e6edf3]">
-                  {e.code}
-                </pre>
-                <button onClick={() => onUseCode(e.code!)} className="mt-2 text-xs text-accent hover:underline">
-                  에디터로 가져오기
-                </button>
-              </>
-            )}
+            <div className="px-4 py-3">
+              {e.text && <Markdown>{e.text}</Markdown>}
+              {e.code && (
+                <>
+                  <pre className="mt-3 overflow-x-auto rounded-md border border-line bg-code p-3 font-mono text-[13px] leading-relaxed">
+                    {e.code}
+                  </pre>
+                  <button
+                    onClick={() => onUseCode(e.code!)}
+                    className="mt-2.5 text-[13px] text-fg-muted underline underline-offset-4 hover:text-fg"
+                  >
+                    에디터로 가져오기
+                  </button>
+                </>
+              )}
+            </div>
           </article>
         ))}
       </div>
