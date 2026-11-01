@@ -44,7 +44,7 @@ export async function getProblem(id: number) {
 }
 
 /** 브라우저로 보내는 필드 (참조 정답 코드 제외). 채점을 브라우저에서 하므로 테스트는 포함 */
-export function toPublic(p: Problem, userId: string | null) {
+export function toPublic(p: Problem, userId: string | null, siteOwner = false) {
   return {
     id: p.id,
     title: p.title,
@@ -56,12 +56,12 @@ export function toPublic(p: Problem, userId: string | null) {
     examples: p.examples,
     tests: p.tests,
     source: p.source,
-    isMine: p.source === "ai" && !!userId && p.createdBy === userId,
+    isMine: p.source === "ai" && (siteOwner || (!!userId && p.createdBy === userId)),
   };
 }
 export type PublicProblem = ReturnType<typeof toPublic>;
 
-export async function listSubmissions(userId: string | null, problemId?: number) {
+export async function listSubmissions(userId: string | null, problemId?: number, opts: { withCode?: boolean } = {}) {
   if (!userId) return [];
   return db
     .select({
@@ -69,7 +69,8 @@ export async function listSubmissions(userId: string | null, problemId?: number)
       problemId: submissions.problemId,
       title: problems.title,
       level: problems.level,
-      code: submissions.code,
+      // 목록 화면에서는 코드를 내려보내지 않는다 (최대 200건 × 50KB)
+      code: opts.withCode ? submissions.code : sql<string>`''`,
       passed: submissions.passed,
       passedCount: submissions.passedCount,
       totalCount: submissions.totalCount,

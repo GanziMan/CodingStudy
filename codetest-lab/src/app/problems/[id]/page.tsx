@@ -35,7 +35,8 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
   const problem = await getProblem(Number(id));
   if (!problem) notFound();
   const userId = await getUserId();
-  const subs = await listSubmissions(userId, problem.id);
+  const owner = await isOwner();
+  const subs = await listSubmissions(userId, problem.id, { withCode: true });
 
   return (
     <>
@@ -56,10 +57,10 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
         }}
       />
       <Workspace
-        problem={toPublic(problem, userId)}
+        problem={toPublic(problem, userId, owner)}
         starter={starterCode(problem)}
         initialSubmissions={subs.map((s) => ({ ...s, createdAt: s.createdAt.toISOString() }))}
-        owner={await isOwner()}
+        owner={owner}
       />
     </>
   );

@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { conversations, messages } from "@/db/schema";
-import { MODEL, getClient } from "@/lib/ai";
+import { MODEL, getClient, streamToResponse } from "@/lib/ai";
 import { ASK_SYSTEM, getMessages } from "@/lib/ask";
 import { jsonError } from "@/lib/http";
 import { isOwner } from "@/lib/owner";
@@ -42,43 +42,19 @@ export async function POST(req: Request) {
     messages: history.map((m) => ({ role: m.role, content: m.content })),
   });
 
-  const encoder = new TextEncoder();
   let full = "";
-  const save = async () => {
-    if (!full.trim()) return;
-    await db.insert(messages).values({ conversationId, role: "assistant", content: full });
-    await db
-      .update(conversations)
-      .set({ updatedAt: sql`(unixepoch())` })
-      .where(eq(conversations.id, conversationId));
-  };
-
-  const out = new ReadableStream<Uint8Array>({
-    start(controller) {
-      stream.on("text", (t) => {
-        full += t;
-        controller.enqueue(encoder.encode(t));
-      });
-      stream.on("end", async () => {
-        await save().catch(console.error);
-        controller.close();
-      });
-      stream.on("error", async (e) => {
-        full += `\n\n> 답변이 중간에 끊겼어요: ${e.message}`;
-        controller.enqueue(encoder.encode(`\n\n> 답변이 중간에 끊겼어요: ${e.message}`));
-        await save().catch(console.error);
-        controller.close();
-      });
+  return streamToResponse(stream, {
+    onText: (t) => {
+      full += t;
     },
-    cancel() {
-      stream.abort();
+    onDone: async () => {
+      if (!full.trim()) return;
+      await db.insert(messages).values({ conversationId, role: "assistant", content: full });
+      await db
+        .update(conversations)
+        .set({ updatedAt: sql`(unixepoch())` })
+        .where(eq(conversations.id, conversationId));
     },
-  });
-
-  return new Response(out, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "X-Conversation-Id": String(conversationId),
-    },
+    extraHeaders: { "X-Conversation-Id": String(conversationId) },
   });
 }

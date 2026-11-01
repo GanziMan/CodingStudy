@@ -1,8 +1,8 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { aiUsage } from "@/db/schema";
 
-type Kind = "ai" | "generate" | "login";
+type Kind = "ai" | "generate" | "login" | "submit";
 
 const num = (v: string | undefined, d: number) => (v && Number(v) > 0 ? Number(v) : d);
 
@@ -17,6 +17,7 @@ const LIMITS: Record<Kind, { perIp: number; global: number }> = {
     global: num(process.env.GENERATE_DAILY_LIMIT_GLOBAL, 50),
   },
   login: { perIp: 20, global: 200 },
+  submit: { perIp: 300, global: 20000 },
 };
 
 const today = () =>
@@ -41,12 +42,21 @@ async function undo(key: string, kind: Kind, day: string) {
     .where(and(eq(aiUsage.key, key), eq(aiUsage.kind, kind), eq(aiUsage.day, day)));
 }
 
+async function cleanup(today: string) {
+  const d = new Date(today);
+  d.setDate(d.getDate() - 7);
+  const cutoff = d.toISOString().slice(0, 10);
+  await db.delete(aiUsage).where(lt(aiUsage.day, cutoff));
+}
+
 /** 한도 안이면 사용량을 1 올리고 null, 넘으면 사용자에게 보여줄 메시지 */
 export async function consume(ip: string, kind: Kind): Promise<string | null> {
   const day = today();
   const limit = LIMITS[kind];
-  const label = { ai: "AI 튜터", generate: "AI 문제 만들기", login: "로그인 시도" }[kind];
+  const label = { ai: "AI 튜터", generate: "AI 문제 만들기", login: "로그인 시도", submit: "제출" }[kind];
 
+  // 오래된 집계 행은 가끔 정리한다 (테이블이 무한히 자라지 않게)
+  if (Math.random() < 0.02) void cleanup(day).catch(() => {});
   const mine = await bump(`ip:${ip}`, kind, day);
   if (mine > limit.perIp) {
     await undo(`ip:${ip}`, kind, day);

@@ -1,7 +1,7 @@
 "use client";
 
-import Editor, { type BeforeMount } from "@monaco-editor/react";
-import { useEffect, useRef } from "react";
+import Editor, { loader, type BeforeMount } from "@monaco-editor/react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../theme";
 
 // Geist 다크 팔레트에 맞춘 에디터 테마
@@ -59,6 +59,58 @@ export function CodeEditor({
   useEffect(() => {
     runRef.current = onRun;
   }, [onRun]);
+
+  // 에디터는 CDN에서 받아온다. 회사망 등에서 막히면 일반 입력창으로 대체해 문제는 풀 수 있게 한다.
+  const [fallback, setFallback] = useState(false);
+  useEffect(() => {
+    let done = false;
+    const timer = setTimeout(() => !done && setFallback(true), 12_000);
+    const init = loader.init();
+    init.then(
+      () => {
+        done = true;
+        clearTimeout(timer);
+      },
+      () => {
+        done = true;
+        clearTimeout(timer);
+        setFallback(true);
+      },
+    );
+    return () => {
+      done = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  if (fallback) {
+    return (
+      <div className="flex h-full flex-col">
+        <p className="border-b border-line bg-warn-soft px-4 py-2 text-[13px] text-warn">
+          코드 에디터를 불러오지 못해 기본 입력창으로 보여드려요. 실행과 채점은 똑같이 할 수 있어요.
+        </p>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+              e.preventDefault();
+              runRef.current();
+            }
+            if (e.key === "Tab") {
+              e.preventDefault();
+              const t = e.currentTarget;
+              const { selectionStart: a, selectionEnd: b } = t;
+              onChange(value.slice(0, a) + "  " + value.slice(b));
+              requestAnimationFrame(() => t.setSelectionRange(a + 2, a + 2));
+            }
+          }}
+          spellCheck={false}
+          className="min-h-0 flex-1 resize-none bg-bg p-4 font-mono text-sm leading-[22px] outline-none"
+        />
+      </div>
+    );
+  }
 
   return (
     <Editor

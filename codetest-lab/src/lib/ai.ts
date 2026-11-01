@@ -79,6 +79,65 @@ ${task.resultSummary ? `\n최근 채점 결과: ${task.resultSummary}\n` : ""}
   }
 }
 
+
+type TextStream = {
+  on(event: "text", cb: (t: string) => void): unknown;
+  on(event: "end", cb: () => void): unknown;
+  on(event: "error", cb: (e: Error) => void): unknown;
+  abort(): void;
+};
+
+/** Anthropic 스트림을 text/plain 응답으로. 클라이언트가 끊은 뒤 enqueue해서 터지지 않게 막는다. */
+export function streamToResponse(
+  stream: TextStream,
+  opts: { onText?: (t: string) => void; onDone?: (reason: "end" | "error") => Promise<void> | void; extraHeaders?: Record<string, string> } = {},
+): Response {
+  const encoder = new TextEncoder();
+  let closed = false;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const push = (t: string) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(t));
+        } catch {
+          closed = true;
+        }
+      };
+      const finish = async (reason: "end" | "error") => {
+        try {
+          await opts.onDone?.(reason);
+        } catch (e) {
+          console.error(e);
+        }
+        if (closed) return;
+        closed = true;
+        try {
+          controller.close();
+        } catch {}
+      };
+      stream.on("text", (t) => {
+        opts.onText?.(t);
+        push(t);
+      });
+      stream.on("end", () => void finish("end"));
+      stream.on("error", (e) => {
+        const msg = `\n\n> 답변이 중간에 끊겼어요: ${e.message}`;
+        opts.onText?.(msg);
+        push(msg);
+        void finish("error");
+      });
+    },
+    cancel() {
+      closed = true;
+      stream.abort();
+    },
+  });
+  return new Response(body, {
+    headers: { "Content-Type": "text/plain; charset=utf-8", ...(opts.extraHeaders ?? {}) },
+  });
+}
+
 /** 텍스트 응답을 스트리밍으로 돌려주는 Response */
 export function streamText(p: Problem, task: TextTask): Response {
   const anthropic = getClient();
@@ -163,19 +222,5 @@ ${opts.resultSummary ? `\n## 최근 실행 결과\n${opts.resultSummary}\n` : ""
   ];
 
   const stream = anthropic.messages.stream({ model: MODEL, max_tokens: 6000, system: TONE, messages });
-  const encoder = new TextEncoder();
-  const body = new ReadableStream<Uint8Array>({
-    start(controller) {
-      stream.on("text", (t) => controller.enqueue(encoder.encode(t)));
-      stream.on("end", () => controller.close());
-      stream.on("error", (e) => {
-        controller.enqueue(encoder.encode(`\n\n> 답변이 중간에 끊겼어요: ${e.message}`));
-        controller.close();
-      });
-    },
-    cancel() {
-      stream.abort();
-    },
-  });
-  return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  return streamToResponse(stream);
 }

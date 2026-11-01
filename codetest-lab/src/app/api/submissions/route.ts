@@ -3,7 +3,8 @@ import { db } from "@/db";
 import { submissions } from "@/db/schema";
 import { jsonError } from "@/lib/http";
 import { getProblem } from "@/lib/problems";
-import { getUserId } from "@/lib/user";
+import { consume } from "@/lib/rate-limit";
+import { getClientIp, getUserId } from "@/lib/user";
 
 const Body = z.object({
   problemId: z.number().int(),
@@ -22,6 +23,9 @@ export async function POST(req: Request) {
 
   const problem = await getProblem(problemId);
   if (!problem) return jsonError("문제를 찾을 수 없습니다.", 404);
+  // 기록 저장 폭주(DB 채우기) 방지. 채점 자체는 브라우저에서 하므로 제한에 걸려도 결과는 볼 수 있다.
+  const limited = await consume(await getClientIp(), "submit");
+  if (limited) return jsonError(limited, 429);
   if (totalCount !== problem.tests.length || passedCount > totalCount) {
     return jsonError("채점 결과가 올바르지 않아요. 새로고침 후 다시 제출해 주세요.");
   }
