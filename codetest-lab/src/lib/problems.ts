@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { problems, submissions, type Problem } from "@/db/schema";
 
@@ -6,7 +6,7 @@ export type ProblemSummary = Pick<Problem, "id" | "title" | "level" | "category"
   status: "solved" | "tried" | "new";
 };
 
-export async function listProblems(): Promise<ProblemSummary[]> {
+export async function listProblems(userId: string | null): Promise<ProblemSummary[]> {
   const rows = await db
     .select({
       id: problems.id,
@@ -18,7 +18,10 @@ export async function listProblems(): Promise<ProblemSummary[]> {
       tries: sql<number>`count(${submissions.id})`,
     })
     .from(problems)
-    .leftJoin(submissions, eq(submissions.problemId, problems.id))
+    .leftJoin(
+      submissions,
+      and(eq(submissions.problemId, problems.id), eq(submissions.userId, userId ?? "")),
+    )
     .groupBy(problems.id)
     .orderBy(problems.level, problems.id);
 
@@ -28,12 +31,20 @@ export async function listProblems(): Promise<ProblemSummary[]> {
   }));
 }
 
+export async function listProblemIndex() {
+  return db
+    .select({ id: problems.id, title: problems.title, createdAt: problems.createdAt })
+    .from(problems)
+    .orderBy(problems.id);
+}
+
 export async function getProblem(id: number) {
+  if (!Number.isInteger(id)) return undefined;
   return db.query.problems.findFirst({ where: eq(problems.id, id) });
 }
 
-/** 클라이언트에 보내도 되는 필드만 (숨김 테스트·참조 풀이 제외) */
-export function toPublic(p: Problem) {
+/** 브라우저로 보내는 필드 (참조 정답 코드 제외). 채점을 브라우저에서 하므로 테스트는 포함 */
+export function toPublic(p: Problem, userId: string | null) {
   return {
     id: p.id,
     title: p.title,
@@ -43,13 +54,15 @@ export function toPublic(p: Problem) {
     functionName: p.functionName,
     params: p.params,
     examples: p.examples,
+    tests: p.tests,
     source: p.source,
-    testCount: p.tests.length,
+    isMine: p.source === "ai" && !!userId && p.createdBy === userId,
   };
 }
 export type PublicProblem = ReturnType<typeof toPublic>;
 
-export async function listSubmissions(problemId?: number) {
+export async function listSubmissions(userId: string | null, problemId?: number) {
+  if (!userId) return [];
   return db
     .select({
       id: submissions.id,
@@ -64,7 +77,11 @@ export async function listSubmissions(problemId?: number) {
     })
     .from(submissions)
     .innerJoin(problems, eq(problems.id, submissions.problemId))
-    .where(problemId ? eq(submissions.problemId, problemId) : undefined)
+    .where(
+      problemId
+        ? and(eq(submissions.userId, userId), eq(submissions.problemId, problemId))
+        : eq(submissions.userId, userId),
+    )
     .orderBy(desc(submissions.id))
     .limit(200);
 }
@@ -72,4 +89,16 @@ export type SubmissionRow = Awaited<ReturnType<typeof listSubmissions>>[number];
 
 export function starterCode(p: Pick<Problem, "functionName" | "params">) {
   return `function ${p.functionName}(${p.params.join(", ")}) {\n  var answer = 0;\n  return answer;\n}\n`;
+}
+
+/** 마크다운을 걷어낸 짧은 요약 (메타 description용) */
+export function plainSummary(md: string, max = 150) {
+  const text = md
+    .split(/\n#{1,6}\s/)[0]
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/\*\*([^*]*)\*\*/g, "$1")
+    .replace(/[#>*_]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > max ? text.slice(0, max - 1) + "…" : text;
 }

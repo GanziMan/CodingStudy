@@ -3,12 +3,17 @@ import { db } from "@/db";
 import { problems } from "@/db/schema";
 import { callTool } from "@/lib/ai";
 import { computeOutputs } from "@/lib/grader";
+import { CATEGORIES } from "@/lib/categories";
 import { jsonError } from "@/lib/http";
+import { consume } from "@/lib/rate-limit";
+import { getClientIp, getUserId } from "@/lib/user";
+
+export const maxDuration = 180;
 
 const Body = z.object({
-  category: z.string().min(1).max(30),
+  category: z.enum(CATEGORIES),
   level: z.number().int().min(1).max(5),
-  request: z.string().max(500).optional(),
+  request: z.string().max(200).optional(),
 });
 
 const Generated = z
@@ -59,6 +64,10 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError("유형·레벨을 확인하세요.");
   const { category, level, request } = parsed.data;
+  const userId = await getUserId();
+  if (!userId) return jsonError("쿠키가 꺼져 있으면 문제를 만들 수 없어요.");
+  const limited = await consume(await getClientIp(), "generate");
+  if (limited) return jsonError(limited, 429);
 
   const existing = await db.select({ title: problems.title }).from(problems);
   const prompt = `새 코딩테스트 문제를 하나 만들어주세요.
@@ -102,6 +111,7 @@ ${request ? `- 추가 요청: ${request}` : ""}
             tests: [...examples, ...hidden],
             referenceSolution: gen.reference,
             source: "ai",
+            createdBy: userId,
           })
           .returning({ id: problems.id });
         return Response.json({ id: row.id });
@@ -109,8 +119,10 @@ ${request ? `- 추가 요청: ${request}` : ""}
         lastError = e instanceof Error ? e.message : String(e);
       }
     }
-    return jsonError(`문제 생성 검증 실패: ${lastError}`, 502);
+    console.error("generate failed:", lastError);
+    return jsonError("문제를 검증하지 못했어요. 다른 유형이나 요청으로 다시 시도해 주세요.", 502);
   } catch (e) {
-    return jsonError(e instanceof Error ? e.message : "문제 생성 실패", 500);
+    console.error(e);
+    return jsonError("AI 응답을 받지 못했어요. 잠시 후 다시 시도해 주세요.", 500);
   }
 }

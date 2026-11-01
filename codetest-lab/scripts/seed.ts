@@ -1,9 +1,15 @@
-import { db } from "../src/db";
-import { problems } from "../src/db/schema";
-import { computeOutputs } from "../src/lib/grader";
-import { seedProblems } from "./seed-data";
+import { loadEnvConfig } from "@next/env";
+
+// .env.local 의 DATABASE_URL(Turso 등)을 읽은 뒤 DB 모듈을 불러온다
+loadEnvConfig(process.cwd());
 
 async function main() {
+  const { db } = await import("../src/db");
+  const { problems } = await import("../src/db/schema");
+  const { computeOutputs } = await import("../src/lib/grader");
+  const { seedProblems } = await import("./seed-data");
+  console.log(`DB: ${(process.env.DATABASE_URL || "file:./data/app.db").replace(/\?.*$/, "")}`);
+
   const existing = await db.select({ title: problems.title }).from(problems);
   const titles = new Set(existing.map((p) => p.title));
 

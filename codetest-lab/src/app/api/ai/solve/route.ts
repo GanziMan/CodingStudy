@@ -1,10 +1,11 @@
 import { callTool, problemContext } from "@/lib/ai";
 import { aiProblem } from "@/lib/ai-route";
-import { runTests } from "@/lib/grader";
+
+export const maxDuration = 120;
 
 type Solved = { code: string; explanation: string };
 
-// AI가 직접 풀고, 그 코드를 전체 테스트로 검증해서 함께 돌려준다
+// AI가 직접 푼 코드와 설명을 돌려준다 (검증은 브라우저에서 전체 테스트로 실행)
 export async function POST(req: Request) {
   const r = await aiProblem(req);
   if ("error" in r) return r.error;
@@ -30,9 +31,6 @@ export async function POST(req: Request) {
         required: ["code", "explanation"],
       },
     });
-
-    const results = await runTests(solved.code, p.functionName, p.tests);
-    const passedCount = results.filter((x) => x.passed).length;
-    return Response.json({ ...solved, passedCount, totalCount: results.length });
+    return Response.json(solved);
   });
 }

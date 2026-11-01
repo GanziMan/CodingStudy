@@ -1,17 +1,23 @@
 "use client";
 
 import { useRef, useState } from "react";
+import type { TestCase } from "@/db/schema";
+import { runTests } from "@/lib/client-grader";
 import { Markdown } from "../Markdown";
 import { streamText, type AiEntry } from "./types";
 
 export function AiPane({
   problemId,
+  functionName,
+  tests,
   code,
   solved,
   resultSummary,
   onUseCode,
 }: {
   problemId: number;
+  functionName: string;
+  tests: TestCase[];
   code: string;
   solved: boolean;
   resultSummary?: string;
@@ -65,11 +71,10 @@ export function AiPane({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      update(id, {
-        text: data.explanation,
-        code: data.code,
-        verified: `채점 결과 ${data.passedCount}/${data.totalCount} 통과`,
-      });
+      update(id, { text: data.explanation, code: data.code, verified: "채점 중…" });
+      const results = await runTests(data.code, functionName, tests);
+      const passed = results.filter((r) => r.passed).length;
+      update(id, { verified: `채점 결과 ${passed}/${results.length} 통과` });
     } catch (e) {
       update(id, { text: `> ⚠️ ${e instanceof Error ? e.message : e}` });
     } finally {
@@ -109,8 +114,11 @@ export function AiPane({
       <div className="space-y-4 p-4">
         {entries.length === 0 && (
           <p className="px-2 py-6 text-sm leading-relaxed text-white/50">
-            막히면 힌트부터 단계별로 받아보세요. 코드를 짜고 틀렸다면 <b>내 코드 리뷰</b>로 무엇이 틀렸는지
-            짚어줍니다. 해설과 AI 풀이는 정답 코드가 포함돼요.
+            막히면 <b>힌트</b>부터 받아보세요. 1단계는 방향만, 3단계로 갈수록 구체적이에요.
+            <br />
+            코드를 짰는데 틀렸다면 <b>내 코드 리뷰</b>가 무엇이 왜 틀렸는지 짚어줘요.
+            <br />
+            <b>해설</b>과 <b>AI 풀이</b>에는 정답 코드가 들어 있으니 충분히 고민한 뒤에 열어보세요.
           </p>
         )}
         {entries.map((e) => (

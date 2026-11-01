@@ -30,7 +30,7 @@ export function ProblemPane({ problem }: { problem: PublicProblem }) {
         </table>
       </div>
       <p className="mt-4 text-xs text-white/40">
-        제출 시 숨겨진 테스트를 포함해 총 {problem.testCount}개로 채점합니다.
+        제출 시 숨겨진 테스트를 포함해 총 {problem.tests.length}개로 채점합니다.
       </p>
     </div>
   );

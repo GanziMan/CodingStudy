@@ -10,8 +10,3 @@ export async function problemFromParams(params: Promise<{ id: string }>) {
   if (!Number.isInteger(n)) return null;
   return (await getProblem(n)) ?? null;
 }
-
-export async function readCode(req: Request): Promise<string | null> {
-  const body = (await req.json().catch(() => null)) as { code?: unknown } | null;
-  return typeof body?.code === "string" && body.code.length <= 50_000 ? body.code : null;
-}

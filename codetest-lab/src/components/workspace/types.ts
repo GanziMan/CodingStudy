@@ -1,7 +1,7 @@
-import type { TestResult } from "@/lib/grader";
+import type { TestResult } from "@/lib/client-grader";
 import type { SubmissionRow } from "@/lib/problems";
 
-export type GradeResult = TestResult & { hidden?: boolean };
+export type GradeResult = TestResult;
 
 export type RunOutcome =
   | { mode: "run"; results: GradeResult[] }
@@ -44,5 +44,3 @@ export async function streamText(
   }
   return full;
 }
-
-export const fmtArgs = (input: unknown[]) => input.map((v) => JSON.stringify(v)).join(", ");

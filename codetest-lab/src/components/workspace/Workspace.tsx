@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { runTests } from "@/lib/client-grader";
 import type { PublicProblem } from "@/lib/problems";
 import { LevelBadge } from "../LevelBadge";
 import { AiPane } from "./AiPane";
@@ -12,6 +14,22 @@ import { ResultPanel } from "./ResultPanel";
 import type { ClientSubmission, RunOutcome } from "./types";
 
 type Tab = "problem" | "ai" | "history";
+
+const TIP_KEY = "ctl:tip-dismissed";
+const noopSubscribe = () => () => {};
+
+const safeGet = (k: string) => {
+  try {
+    return localStorage.getItem(k);
+  } catch {
+    return null;
+  }
+};
+const safeSet = (k: string, v: string) => {
+  try {
+    localStorage.setItem(k, v);
+  } catch {}
+};
 
 export function Workspace({
   problem,
@@ -25,49 +43,58 @@ export function Workspace({
   const router = useRouter();
   const storageKey = `code:${problem.id}`;
   // 작성 중인 코드는 브라우저에 자동 저장 (에디터는 클라이언트에서만 그려져 SSR 값과 충돌 없음)
-  const [code, setCode] = useState(() => {
-    if (typeof window === "undefined") return starter;
-    try {
-      return localStorage.getItem(storageKey) ?? starter;
-    } catch {
-      return starter;
-    }
-  });
+  const [code, setCode] = useState(() =>
+    typeof window === "undefined" ? starter : (safeGet(storageKey) ?? starter),
+  );
+  // 서버 렌더링에서는 안내를 숨기고, 브라우저에서 닫은 적이 없을 때만 보여준다 (hydration 불일치 방지)
+  const [tipClosed, setTipClosed] = useState(false);
+  const tipSeen = useSyncExternalStore(
+    noopSubscribe,
+    () => !!safeGet(TIP_KEY),
+    () => true,
+  );
+  const showTip = !tipSeen && !tipClosed;
+  const setShowTip = (v: boolean) => setTipClosed(!v);
   const [tab, setTab] = useState<Tab>("problem");
   const [busy, setBusy] = useState<"run" | "submit" | null>(null);
   const [outcome, setOutcome] = useState<RunOutcome | null>(null);
   const [subs, setSubs] = useState(initialSubmissions);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(storageKey, code);
-      } catch {}
-    }, 300);
+    const t = setTimeout(() => safeSet(storageKey, code), 300);
     return () => clearTimeout(t);
   }, [code, storageKey]);
 
   const solved = subs.some((s) => s.passed);
+  const exampleCount = problem.examples.length;
 
   const grade = useCallback(
     async (mode: "run" | "submit") => {
       setBusy(mode);
       setOutcome(null);
       try {
-        const res = await fetch(`/api/problems/${problem.id}/${mode}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "실행 실패");
-        setOutcome({ mode, results: data.results });
+        const tests = mode === "run" ? problem.examples : problem.tests;
+        const raw = await runTests(code, problem.functionName, tests);
+        const results = raw.map((r) =>
+          r.index >= exampleCount ? { ...r, hidden: true } : r,
+        );
+        setOutcome({ mode, results });
+
         if (mode === "submit") {
-          setSubs((prev) => [
-            { ...data.submission, title: problem.title, level: problem.level },
-            ...prev,
-          ]);
-          router.refresh();
+          const passedCount = results.filter((r) => r.passed).length;
+          const res = await fetch("/api/submissions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ problemId: problem.id, code, passedCount, totalCount: results.length }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setSubs((prev) => [
+              { ...data.submission, title: problem.title, level: problem.level },
+              ...prev,
+            ]);
+            router.refresh();
+          }
         }
       } catch (e) {
         setOutcome({ mode: "error", message: e instanceof Error ? e.message : String(e) });
@@ -75,7 +102,7 @@ export function Workspace({
         setBusy(null);
       }
     },
-    [code, problem.id, problem.title, problem.level, router],
+    [code, exampleCount, problem, router],
   );
 
   const resultSummary =
@@ -89,31 +116,39 @@ export function Workspace({
       : undefined;
 
   const deleteProblem = async () => {
-    if (!confirm("이 AI 문제와 풀이 기록을 삭제할까요?")) return;
+    if (!confirm("내가 만든 이 AI 문제를 삭제할까요?")) return;
     const res = await fetch(`/api/problems/${problem.id}`, { method: "DELETE" });
     if (res.ok) {
       router.push("/");
       router.refresh();
+    } else {
+      alert((await res.json()).error);
     }
   };
 
   const tabBtn = (t: Tab, label: string) => (
     <button
       onClick={() => setTab(t)}
-      className={`h-11 border-b-2 px-4 text-sm ${tab === t ? "border-accent text-white" : "border-transparent text-white/55 hover:text-white"}`}
+      aria-selected={tab === t}
+      role="tab"
+      className={`h-11 shrink-0 border-b-2 px-4 text-sm ${tab === t ? "border-accent text-white" : "border-transparent text-white/55 hover:text-white"}`}
     >
       {label}
     </button>
   );
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col bg-panel-2 text-white">
-      <div className="flex h-12 shrink-0 items-center gap-3 border-b border-panel-line bg-navy/60 px-4">
+    <div className="flex flex-col bg-panel-2 text-white lg:h-[calc(100dvh-3.5rem)]">
+      <div className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-panel-line bg-navy/60 px-4 py-2">
+        <Link href="/problems" className="text-xs text-white/50 hover:text-white">
+          ← 문제 목록
+        </Link>
         <h1 className="truncate font-semibold">{problem.title}</h1>
         <LevelBadge level={problem.level} />
         <span className="text-xs text-white/50">{problem.category}</span>
+        {problem.source === "ai" && <span className="text-xs text-[#b794f6]">AI 생성 문제</span>}
         {solved && <span className="text-xs font-semibold text-ok">✓ 해결</span>}
-        {problem.source === "ai" && (
+        {problem.isMine && (
           <button onClick={deleteProblem} className="ml-auto text-xs text-white/40 hover:text-bad">
             문제 삭제
           </button>
@@ -122,18 +157,20 @@ export function Workspace({
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <section className="flex min-h-0 flex-col border-panel-line lg:w-[44%] lg:border-r">
-          <div className="flex shrink-0 border-b border-panel-line px-2">
+          <div role="tablist" className="flex shrink-0 overflow-x-auto border-b border-panel-line px-2">
             {tabBtn("problem", "문제 설명")}
             {tabBtn("ai", "AI 튜터")}
-            {tabBtn("history", `제출 기록 ${subs.length ? `(${subs.length})` : ""}`)}
+            {tabBtn("history", `내 제출 ${subs.length ? `(${subs.length})` : ""}`)}
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="max-h-[60vh] min-h-0 flex-1 overflow-y-auto lg:max-h-none">
             <div hidden={tab !== "problem"}>
               <ProblemPane problem={problem} />
             </div>
             <div hidden={tab !== "ai"} className="h-full">
               <AiPane
                 problemId={problem.id}
+                functionName={problem.functionName}
+                tests={problem.tests}
                 code={code}
                 solved={solved}
                 resultSummary={resultSummary}
@@ -153,7 +190,30 @@ export function Workspace({
           </div>
         </section>
 
-        <section className="flex min-h-[420px] flex-1 flex-col">
+        <section className="flex flex-1 flex-col border-t border-panel-line lg:min-h-0 lg:border-t-0">
+          {showTip && (
+            <div className="flex items-start gap-3 border-b border-panel-line bg-accent/10 px-4 py-3 text-[13px] leading-relaxed text-white/85">
+              <span aria-hidden>👋</span>
+              <p className="flex-1">
+                <b>처음이세요?</b> <code className="text-accent">{problem.functionName}</code> 함수 안에 코드를 쓰고
+                답을 <b>return</b> 하면 돼요. <b>코드 실행</b>은 예제로만 확인하고, <b>제출 후 채점하기</b>는 숨은
+                테스트까지 채점해요. 막히면 <b>AI 튜터</b> 탭에서 힌트를 받아보세요.{" "}
+                <Link href="/guide" className="text-accent underline">
+                  이용 가이드
+                </Link>
+              </p>
+              <button
+                aria-label="안내 닫기"
+                onClick={() => {
+                  setShowTip(false);
+                  safeSet(TIP_KEY, "1");
+                }}
+                className="text-white/50 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+          )}
           <div className="flex h-10 shrink-0 items-center justify-between border-b border-panel-line px-4 text-xs text-white/60">
             <span>solution.js · JavaScript</span>
             <button
@@ -163,14 +223,14 @@ export function Workspace({
               초기화
             </button>
           </div>
-          <div className="min-h-0 flex-[3]">
+          <div className="h-[360px] lg:h-auto lg:min-h-0 lg:flex-[3]">
             <CodeEditor value={code} onChange={setCode} onRun={() => grade("run")} />
           </div>
-          <div className="min-h-0 flex-[2] overflow-y-auto border-t border-panel-line bg-[#152230]">
+          <div className="min-h-[160px] overflow-y-auto border-t border-panel-line bg-[#152230] lg:min-h-0 lg:flex-[2]">
             <ResultPanel busy={busy} outcome={outcome} />
           </div>
-          <div className="flex h-14 shrink-0 items-center justify-end gap-2 border-t border-panel-line bg-navy/60 px-4">
-            <span className="mr-auto text-xs text-white/40">⌘/Ctrl + Enter 로 실행</span>
+          <div className="sticky bottom-0 flex h-14 shrink-0 items-center justify-end gap-2 border-t border-panel-line bg-[#101c27] px-4">
+            <span className="mr-auto hidden text-xs text-white/40 sm:inline">⌘/Ctrl + Enter 로 실행</span>
             <button
               disabled={!!busy}
               onClick={() => grade("run")}

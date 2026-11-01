@@ -14,8 +14,8 @@ export type TestResult = {
 
 const PER_TEST_TIMEOUT_MS = 2000;
 
-// worker_threads + vm으로 실행. 무한 루프는 vm timeout으로 끊는다.
-// 개인 로컬용 채점기이며 보안 샌드박스는 아님.
+// 서버에서는 시드·AI 문제 생성 시 "참조 정답 코드"로 기대 출력을 계산할 때만 쓴다.
+// 사용자 코드는 서버에서 실행하지 않는다 (브라우저 client-grader 사용).
 const WORKER_SOURCE = `
 const { parentPort, workerData } = require("node:worker_threads");
 const vm = require("node:vm");
@@ -91,6 +91,8 @@ export function runTests(
       eval: true,
       workerData: { code, functionName, tests, timeoutMs: PER_TEST_TIMEOUT_MS },
       resourceLimits: { maxOldGenerationSizeMb: 256 },
+      // vm은 보안 샌드박스가 아니므로 워커에는 환경변수(API 키 등)를 넘기지 않는다
+      env: {},
     });
     const killer = setTimeout(
       () => {

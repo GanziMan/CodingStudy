@@ -1,17 +1,25 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { listSubmissions } from "@/lib/problems";
 import { LevelBadge } from "@/components/LevelBadge";
+import { getUserId } from "@/lib/user";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "내 풀이 기록",
+  robots: { index: false, follow: true },
+};
+
 export default async function HistoryPage() {
-  const subs = await listSubmissions();
+  const subs = await listSubmissions(await getUserId());
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">풀이 기록</h1>
-      <div className="rounded-xl border border-line bg-surface">
-        <table className="w-full text-sm">
+      <h1 className="text-2xl font-bold">내 풀이 기록</h1>
+      <p className="mb-6 mt-1 text-sm text-muted">기록은 지금 쓰는 브라우저에 연결되어 저장돼요. 브라우저 쿠키를 지우면 기록이 보이지 않아요.</p>
+      <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+        <table className="w-full min-w-[560px] text-sm">
           <thead className="text-left text-muted">
             <tr className="border-b border-line">
               <th className="px-4 py-3 font-medium">문제</th>
@@ -41,7 +49,7 @@ export default async function HistoryPage() {
             ))}
             {subs.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-muted">아직 제출 기록이 없습니다.</td>
+                <td colSpan={5} className="px-4 py-12 text-center text-muted">아직 제출 기록이 없어요. <Link href="/problems" className="text-accent hover:underline">문제 풀러 가기</Link></td>
               </tr>
             )}
           </tbody>

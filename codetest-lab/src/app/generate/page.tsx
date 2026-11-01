@@ -2,12 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { CATEGORIES } from "@/lib/categories";
 
-const CATEGORIES = ["DP", "구현", "그리디", "완전탐색", "DFS/BFS", "정렬", "해시", "스택/큐", "이분탐색", "그래프"];
 
 export default function GeneratePage() {
   const router = useRouter();
-  const [category, setCategory] = useState("DP");
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("DP");
   const [level, setLevel] = useState(2);
   const [request, setRequest] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,7 +40,8 @@ export default function GeneratePage() {
     <main className="mx-auto w-full max-w-2xl px-4 py-10">
       <h1 className="text-2xl font-bold">AI로 새 문제 만들기</h1>
       <p className="mt-1 text-sm text-muted">
-        AI가 문제와 테스트를 만들고, 정답 코드로 테스트를 직접 검증한 뒤 저장합니다.
+        유형과 난이도만 고르면 AI가 새 문제와 테스트를 만들어요. 정답 코드로 테스트를 직접 검증한 뒤 저장하고,
+        만든 문제는 모든 사람이 함께 풀 수 있어요. (하루 3개까지)
       </p>
 
       <form onSubmit={submit} className="mt-8 space-y-7 rounded-xl border border-line bg-surface p-6">
@@ -74,7 +75,7 @@ export default function GeneratePage() {
             value={request}
             onChange={(e) => setRequest(e.target.value)}
             rows={3}
-            maxLength={500}
+            maxLength={200}
             placeholder="예: 계단 오르기 변형인데 최댓값을 구하는 문제로 / 2차원 배열 DP 연습용으로"
             className="w-full rounded-md border border-line p-3 text-sm outline-none focus:border-accent"
           />

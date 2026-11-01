@@ -1,3 +1,5 @@
+export const maxDuration = 60;
+
 import { streamText } from "@/lib/ai";
 import { aiProblem } from "@/lib/ai-route";
 
