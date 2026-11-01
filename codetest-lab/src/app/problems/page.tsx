@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ProblemTable } from "@/components/ProblemTable";
 import { listProblems } from "@/lib/problems";
 import { OG_BASE } from "@/lib/site";
+import { isOwner } from "@/lib/owner";
 import { getUserId } from "@/lib/user";
 
 export const dynamic = "force-dynamic";
@@ -29,12 +30,14 @@ export default async function ProblemsPage() {
             시작해 보세요.
           </p>
         </div>
+        {(await isOwner()) && (
         <Link
           href="/generate"
           className="inline-flex h-9 items-center rounded-md border border-line-strong px-3.5 text-sm font-medium hover:bg-surface-hover"
         >
           AI로 새 문제 만들기
         </Link>
+        )}
       </div>
       <ProblemTable problems={problems} />
     </main>

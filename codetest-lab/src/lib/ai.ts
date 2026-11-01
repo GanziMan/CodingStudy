@@ -137,3 +137,45 @@ export async function callTool<T>(opts: {
   }
   throw new Error("AI가 구조화된 응답을 주지 않았습니다.");
 }
+
+export type ChatTurn = { role: "user" | "assistant"; content: string };
+
+/** 문제 화면의 자유 질문. 문제·현재 코드·최근 채점 결과를 맥락으로 대화한다. */
+export function streamProblemChat(
+  p: Problem,
+  opts: { history: ChatTurn[]; message: string; code?: string; resultSummary?: string },
+): Response {
+  const anthropic = getClient();
+  const context = `${problemContext(p, { withReference: true })}
+
+## 학습자의 현재 에디터 코드
+\`\`\`js
+${opts.code?.trim() || "(아직 작성 안 함)"}
+\`\`\`
+${opts.resultSummary ? `\n## 최근 실행 결과\n${opts.resultSummary}\n` : ""}
+학습자가 이 문제를 풀면서 질문합니다. 학습자가 정답을 직접 요구하기 전에는 정답 코드 전체를 주지 말고, 질문한 부분만 정확히 답하세요.`;
+
+  const messages: Anthropic.MessageParam[] = [
+    { role: "user", content: context },
+    { role: "assistant", content: "네, 문제와 코드를 확인했어요. 무엇이 궁금한가요?" },
+    ...opts.history.slice(-20).map((t) => ({ role: t.role, content: t.content })),
+    { role: "user", content: opts.message },
+  ];
+
+  const stream = anthropic.messages.stream({ model: MODEL, max_tokens: 6000, system: TONE, messages });
+  const encoder = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      stream.on("text", (t) => controller.enqueue(encoder.encode(t)));
+      stream.on("end", () => controller.close());
+      stream.on("error", (e) => {
+        controller.enqueue(encoder.encode(`\n\n> 답변이 중간에 끊겼어요: ${e.message}`));
+        controller.close();
+      });
+    },
+    cancel() {
+      stream.abort();
+    },
+  });
+  return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+}

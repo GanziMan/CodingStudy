@@ -54,11 +54,9 @@ export function HeroPreview() {
               </div>
             ))}
           </div>
-          <div className="mt-auto rounded-lg border border-line bg-bg-subtle p-3 leading-relaxed">
-            <p className="text-[12px] font-medium text-accent">힌트 1단계</p>
-            <p className="mt-1 text-fg-muted">
-              i번째 칸에 오기 직전엔 어디에 있었을까요? 그 칸들의 방법 수를 이용해 보세요.
-            </p>
+          <div className="mt-auto rounded-lg bg-ok-soft p-3 leading-relaxed">
+            <p className="font-medium text-ok">정답이에요</p>
+            <p className="mt-0.5 text-[12px] text-ok/80">8 / 8 통과</p>
           </div>
         </div>
       </div>

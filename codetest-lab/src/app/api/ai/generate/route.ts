@@ -5,8 +5,8 @@ import { callTool } from "@/lib/ai";
 import { computeOutputs } from "@/lib/grader";
 import { CATEGORIES } from "@/lib/categories";
 import { jsonError } from "@/lib/http";
-import { consume } from "@/lib/rate-limit";
-import { getClientIp, getUserId } from "@/lib/user";
+import { isOwner } from "@/lib/owner";
+import { getUserId } from "@/lib/user";
 
 export const maxDuration = 180;
 
@@ -61,13 +61,12 @@ const SCHEMA = {
 };
 
 export async function POST(req: Request) {
+  if (!(await isOwner())) return jsonError("AI 기능은 지금 사용할 수 없어요.", 403);
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError("유형·레벨을 확인하세요.");
   const { category, level, request } = parsed.data;
   const userId = await getUserId();
   if (!userId) return jsonError("쿠키가 꺼져 있으면 문제를 만들 수 없어요.");
-  const limited = await consume(await getClientIp(), "generate");
-  if (limited) return jsonError(limited, 429);
 
   const existing = await db.select({ title: problems.title }).from(problems);
   const prompt = `새 코딩테스트 문제를 하나 만들어주세요.

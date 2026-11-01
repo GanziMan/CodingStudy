@@ -35,10 +35,12 @@ export function Workspace({
   problem,
   starter,
   initialSubmissions,
+  owner,
 }: {
   problem: PublicProblem;
   starter: string;
   initialSubmissions: ClientSubmission[];
+  owner: boolean;
 }) {
   const router = useRouter();
   const storageKey = `code:${problem.id}`;
@@ -168,26 +170,27 @@ export function Workspace({
         <section className="flex min-h-0 flex-col border-line lg:w-[44%] lg:border-r">
           <div role="tablist" className="flex shrink-0 overflow-x-auto border-b border-line px-2">
             {tabBtn("problem", "문제 설명")}
-            {tabBtn("ai", "AI 튜터")}
+            {owner && tabBtn("ai", "AI 튜터")}
             {tabBtn("history", subs.length ? `내 제출 ${subs.length}` : "내 제출")}
           </div>
           <div className="max-h-[60vh] min-h-0 flex-1 overflow-y-auto lg:max-h-none">
             <div hidden={tab !== "problem"}>
               <ProblemPane problem={problem} />
             </div>
-            <div hidden={tab !== "ai"} className="h-full">
+            {owner && (
+            <div hidden={tab !== "ai"} className="h-[60vh] lg:h-full">
               <AiPane
                 problemId={problem.id}
                 functionName={problem.functionName}
                 tests={problem.tests}
                 code={code}
-                solved={solved}
                 resultSummary={resultSummary}
                 onUseCode={(c) => {
                   if (confirm("에디터의 코드를 AI 풀이로 바꿀까요? 지금 코드는 사라져요.")) setCode(c);
                 }}
               />
             </div>
+            )}
             <div hidden={tab !== "history"}>
               <HistoryPane
                 submissions={subs}
@@ -205,7 +208,7 @@ export function Workspace({
               <p className="flex-1">
                 <code className="font-mono text-accent">{problem.functionName}</code> 함수 안에 코드를 쓰고 답을{" "}
                 <b className="font-semibold">return</b> 하면 돼요. 코드 실행은 예제로만 확인하고, 제출 후 채점하기는 숨은
-                테스트까지 채점해요. 막히면 AI 튜터 탭에서 힌트를 받아보세요.{" "}
+                테스트까지 채점해요.{" "}
                 <Link href="/guide" className="underline underline-offset-4">
                   이용 가이드
                 </Link>

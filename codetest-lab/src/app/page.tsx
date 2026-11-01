@@ -14,28 +14,28 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const HINTS = [
+const FLOW = [
   {
-    level: "1단계",
-    title: "방향만",
-    body: "이 문제는 DP예요. dp[i]를 'i번째 칸까지 가는 방법의 수'로 정의해 보세요.",
+    step: "작성",
+    title: "solution 함수에 답을 return",
+    body: "입력은 매개변수로 들어오고, return한 값으로 채점해요. 많은 기업 코딩테스트와 같은 형식이에요.",
   },
   {
-    level: "2단계",
-    title: "점화식의 모양",
-    body: "i번째 칸에는 i-1칸 또는 i-2칸에서 올 수 있어요. 그러면 dp[i]는 앞의 두 값으로 표현돼요.",
+    step: "실행",
+    title: "예제로 먼저 확인",
+    body: "코드 실행은 화면의 입출력 예로만 돌려봐요. console.log 출력도 함께 보여줘요.",
   },
   {
-    level: "3단계",
-    title: "구현 직전까지",
-    body: "dp[1]=1, dp[2]=2로 시작해서 i=3부터 n까지 채우고, 매번 1,000,000,007로 나눈 나머지를 저장하세요.",
+    step: "제출",
+    title: "숨은 테스트까지 채점",
+    body: "빈 배열이나 아주 큰 입력 같은 경계값까지 채점하고, 시간 초과·스택 오버플로는 이유를 알려줘요.",
   },
 ];
 
 const FAQ = [
   {
     q: "코딩을 처음 해도 이용할 수 있나요?",
-    a: "네. Lv.1 문제는 반복문과 조건문만 알면 풀 수 있고, 막히는 부분은 AI 튜터가 단계별 힌트로 도와줍니다. 이용 가이드에서 함수 작성법과 채점 방식을 먼저 확인해 보세요.",
+    a: "네. Lv.1 문제는 반복문과 조건문만 알면 풀 수 있어요. 이용 가이드에서 함수 작성법과 채점 방식, 에러 메시지 읽는 법을 먼저 확인해 보세요.",
   },
   {
     q: "무료인가요? 회원가입이 필요한가요?",
@@ -45,18 +45,13 @@ const FAQ = [
     q: "어떤 언어로 풀 수 있나요?",
     a: "JavaScript로 풉니다. 많은 기업 코딩테스트에서 쓰는 solution 함수 형식과 같아서 실전 연습에 바로 도움이 돼요.",
   },
-  {
-    q: "AI 튜터는 정답을 바로 알려주나요?",
-    a: "기본은 힌트입니다. 1단계는 방향만, 3단계로 갈수록 구체적으로 알려줘요. 충분히 고민한 뒤에는 해설과 AI 풀이도 볼 수 있어요.",
-  },
 ];
 
 export default async function Home() {
   const problems = await listProblems(await getUserId());
   const starters = problems.filter((p) => p.source === "seed").slice(0, 6);
   const first = starters[0];
-  const stairs = problems.find((p) => p.title === "계단 오르기");
-
+  
   return (
     <main>
       <JsonLd
@@ -83,16 +78,16 @@ export default async function Home() {
       />
 
       <section className="border-b border-line bg-bg-subtle">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_1.1fr] lg:py-24">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:py-24">
           <div>
-            <h1 className="text-[34px] font-semibold leading-[1.2] tracking-[-0.03em] sm:text-[46px]">
+            <h1 className="text-[32px] font-semibold leading-[1.2] tracking-[-0.03em] sm:text-[42px]">
               자바스크립트 코딩테스트,
               <br />
-              막히면 힌트부터
+              브라우저에서 바로 채점까지
             </h1>
             <p className="mt-5 max-w-[34em] text-[17px] leading-relaxed text-fg-muted">
-              브라우저에서 바로 코드를 실행하고 채점받으세요. 막히는 순간 정답 대신 다음 한 걸음만 알려주고, 틀린
-              코드는 어디가 왜 틀렸는지 짚어줍니다. 설치도, 회원가입도 필요 없어요.
+              설치도 회원가입도 없이 코드를 실행하고, 실제 코딩테스트처럼 숨은 테스트까지 채점받으세요. 틀리면 어떤
+              입력에서 왜 틀렸는지 바로 보여줘요.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -115,31 +110,24 @@ export default async function Home() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="max-w-2xl">
-          <h2 className="text-2xl font-semibold tracking-tight">힌트는 세 단계로 나눠서 받아요</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">실제 코딩테스트와 같은 방식으로</h2>
           <p className="mt-3 leading-relaxed text-fg-muted">
-            필요한 만큼만 열어보세요. 대부분은 1단계나 2단계에서 스스로 풀 수 있어요. 아래는{" "}
-            {stairs ? (
-              <Link href={`/problems/${stairs.id}`} className="text-fg underline underline-offset-4">
-                계단 오르기
-              </Link>
-            ) : (
-              "계단 오르기"
-            )}{" "}
-            문제의 실제 힌트 예시예요.
+            작성하고, 예제로 확인하고, 숨은 테스트로 제출하는 흐름을 그대로 연습해요. 처음이라면{" "}
+            <Link href="/guide" className="text-fg underline underline-offset-4">
+              이용 가이드
+            </Link>
+            를 먼저 읽어보세요.
           </p>
         </div>
         <ol className="mt-10 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-3">
-          {HINTS.map((h) => (
-            <li key={h.level} className="bg-surface p-6">
-              <p className="font-mono text-xs text-fg-subtle">{h.level}</p>
-              <h3 className="mt-2 font-semibold">{h.title}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-fg-muted">{h.body}</p>
+          {FLOW.map((f) => (
+            <li key={f.step} className="bg-surface p-6">
+              <p className="font-mono text-xs text-fg-subtle">{f.step}</p>
+              <h3 className="mt-2 font-semibold">{f.title}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-fg-muted">{f.body}</p>
             </li>
           ))}
         </ol>
-        <p className="mt-4 text-sm text-fg-subtle">
-          그래도 어렵다면 내 코드 리뷰, 해설, AI 풀이 순서로 도움을 더 받을 수 있어요.
-        </p>
       </section>
 
       <section className="border-t border-line">
