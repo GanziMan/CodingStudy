@@ -115,16 +115,25 @@ export async function callTool<T>(opts: {
   maxTokens?: number;
 }): Promise<T> {
   const anthropic = getClient();
-  const res = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: opts.maxTokens ?? 8000,
-    system: TONE,
-    tools: [{ name: opts.toolName, description: opts.description, input_schema: opts.schema }],
-    tool_choice: { type: "tool", name: opts.toolName },
-    messages:
-      typeof opts.prompt === "string" ? [{ role: "user", content: opts.prompt }] : opts.prompt,
-  });
-  const block = res.content.find((b) => b.type === "tool_use");
-  if (!block || block.type !== "tool_use") throw new Error("AI가 구조화된 응답을 주지 않았습니다.");
-  return block.input as T;
+  const messages: Anthropic.MessageParam[] =
+    typeof opts.prompt === "string" ? [{ role: "user", content: opts.prompt }] : [...opts.prompt];
+  // 일부 모델은 tool_choice로 특정 도구를 강제할 수 없어서(400 에러), auto로 두고 지시문으로 호출을 유도한다.
+  // 도구를 부르지 않으면 한 번 더 요청한다.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: opts.maxTokens ?? 16000,
+      system: `${TONE}\n\n이번 요청에는 반드시 ${opts.toolName} 도구를 한 번 호출해서 답하세요. 도구 밖에 다른 텍스트는 쓰지 마세요.`,
+      tools: [{ name: opts.toolName, description: opts.description, input_schema: opts.schema }],
+      tool_choice: { type: "auto" },
+      messages,
+    });
+    const block = res.content.find((b) => b.type === "tool_use" && b.name === opts.toolName);
+    if (block && block.type === "tool_use") return block.input as T;
+    messages.push(
+      { role: "assistant", content: res.content.length ? res.content : "(응답 없음)" },
+      { role: "user", content: `${opts.toolName} 도구를 호출해서 결과를 제출해 주세요.` },
+    );
+  }
+  throw new Error("AI가 구조화된 응답을 주지 않았습니다.");
 }
