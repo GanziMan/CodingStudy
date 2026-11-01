@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { SiteNav } from "@/components/SiteNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { THEME_SCRIPT } from "@/components/theme-script";
+import { isOwner } from "@/lib/owner";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
@@ -48,7 +49,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const owner = await isOwner();
   return (
     <html lang="ko" className={`${GeistSans.variable} ${GeistMono.variable} h-full`} suppressHydrationWarning>
       <head>
@@ -71,7 +73,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/" aria-label="코테랩 홈" className="shrink-0 text-fg">
               <Logo />
             </Link>
-            <SiteNav />
+            <SiteNav owner={owner} />
             <div className="ml-auto shrink-0">
               <ThemeToggle />
             </div>

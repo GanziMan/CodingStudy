@@ -10,11 +10,12 @@ const NAV = [
   { href: "/history", label: "내 기록" },
 ];
 
-export function SiteNav() {
+export function SiteNav({ owner = false }: { owner?: boolean }) {
   const path = usePathname();
+  const items = owner ? [...NAV, { href: "/ask", label: "질문하기" }] : NAV;
   return (
     <nav aria-label="주요 메뉴" className="flex min-w-0 items-center gap-1 overflow-x-auto">
-      {NAV.map((n) => {
+      {items.map((n) => {
         const active = path === n.href || path.startsWith(`${n.href}/`);
         return (
           <Link

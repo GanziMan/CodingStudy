@@ -29,6 +29,10 @@ pnpm dev                     # http://localhost:3000
    - Google Search Console: HTML 태그의 content 값을 `GOOGLE_SITE_VERIFICATION`에 넣고 재배포 → 확인 → `sitemap.xml` 제출
    - 네이버 서치어드바이저: HTML 태그 content 값을 `NAVER_SITE_VERIFICATION`에 넣고 재배포 → 확인 → 사이트맵 제출
 
+## 질문하기 (/ask, 주인 전용)
+
+Vercel 환경변수 `OWNER_PASSWORD`를 넣고 재배포하면 `/ask`에서 비밀번호로 열 수 있습니다. 사용 한도 없이 AI에게 질문하고, 대화는 DB에 저장됩니다. 검색엔진에는 노출되지 않습니다.
+
 스키마를 바꾸면 `pnpm db:generate`로 마이그레이션 파일을 만들어 함께 커밋하세요.
 
 ## 구조

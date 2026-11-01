@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { aiUsage } from "@/db/schema";
 
-type Kind = "ai" | "generate";
+type Kind = "ai" | "generate" | "login";
 
 const num = (v: string | undefined, d: number) => (v && Number(v) > 0 ? Number(v) : d);
 
@@ -16,6 +16,7 @@ const LIMITS: Record<Kind, { perIp: number; global: number }> = {
     perIp: num(process.env.GENERATE_DAILY_LIMIT_PER_IP, 3),
     global: num(process.env.GENERATE_DAILY_LIMIT_GLOBAL, 50),
   },
+  login: { perIp: 20, global: 200 },
 };
 
 const today = () =>
@@ -44,7 +45,7 @@ async function undo(key: string, kind: Kind, day: string) {
 export async function consume(ip: string, kind: Kind): Promise<string | null> {
   const day = today();
   const limit = LIMITS[kind];
-  const label = kind === "ai" ? "AI 튜터" : "AI 문제 만들기";
+  const label = { ai: "AI 튜터", generate: "AI 문제 만들기", login: "로그인 시도" }[kind];
 
   const mine = await bump(`ip:${ip}`, kind, day);
   if (mine > limit.perIp) {
