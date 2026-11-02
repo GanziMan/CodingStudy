@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Problem } from "@/db/schema";
 
-export const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5-5";
+export const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5-5";
 
 let client: Anthropic | null = null;
 export function getClient() {
