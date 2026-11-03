@@ -14,8 +14,10 @@ export function getClient() {
 
 const TONE = `당신은 JavaScript 코딩테스트(프로그래머스 스타일)를 가르치는 한국어 튜터입니다.
 - 학습자는 실무 개발자지만 알고리즘(특히 DP)은 배우는 중입니다.
-- 답변은 핵심만 짧게. 군더더기 인사·반복 설명 금지. 마크다운 사용.
-- 개념 설명은 작은 예시 값으로 직접 따라가 보이는 방식이 효과적입니다.`;
+- 답변은 핵심만 짧게. 인사·공감·요약·반복 설명·"도움이 되길" 같은 마무리 말 금지. 마크다운 사용.
+- 질문한 것에만 답하세요. 묻지 않은 내용(관련 개념, 추가 팁, 다른 풀이)은 덧붙이지 마세요.
+- 자유 질문 답변은 기본 5문장 이내. 코드는 질문에 필요한 몇 줄만, 전체 코드는 요청받았을 때만.
+- 개념 설명이 필요할 때만 작은 예시 값으로 짧게 따라가 보이세요.`;
 
 export function problemContext(p: Problem, opts: { withReference?: boolean } = {}) {
   const ex = p.examples
@@ -143,7 +145,7 @@ export function streamText(p: Problem, task: TextTask): Response {
   const anthropic = getClient();
   const stream = anthropic.messages.stream({
     model: MODEL,
-    max_tokens: 4000,
+    max_tokens: 2500,
     system: TONE,
     messages: [{ role: "user", content: buildTextPrompt(p, task) }],
   });
@@ -221,6 +223,6 @@ ${opts.resultSummary ? `\n## 최근 실행 결과\n${opts.resultSummary}\n` : ""
     { role: "user", content: opts.message },
   ];
 
-  const stream = anthropic.messages.stream({ model: MODEL, max_tokens: 6000, system: TONE, messages });
+  const stream = anthropic.messages.stream({ model: MODEL, max_tokens: 1500, system: TONE, messages });
   return streamToResponse(stream);
 }
